@@ -41,7 +41,7 @@ class Screen(Gtk.DrawingArea):
 
         """
         pat = cairo.LinearGradient(0.0, 0.0, 0.0, 1.0)
-        pat.add_color_stop_rgba(1, 1, 1, 1, 1)  # First stop, 50% opacity
+        pat.add_color_stop_rgba(0.8, 0.8, 0.8, 0.8, 1)
 
         ctx.rectangle(0, 0, self.size, self.size)
         ctx.set_source(pat)
