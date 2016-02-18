@@ -5,7 +5,7 @@ gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
-import Field
+import Screen
 
 
 class Application(Gtk.Window):
@@ -21,35 +21,42 @@ class Application(Gtk.Window):
         Gtk.Window.__init__(self)
 
         # Default properties
+        self.set_title("reversi")
         self.set_border_width(10)
-        self.resize(1000, 800)
+        self.resize(950, 785)
 
         # Default events
         self.connect('delete-event', Gtk.main_quit)
 
         # Create Title bar
-        self.set_title('Reversi v0.1')
-        title = Gtk.HeaderBar()
-        title.set_title("Reversi 0.1")
-        title.set_subtitle("TDT University - Spring 2016")
-        title.set_show_close_button(True)
-        self.set_titlebar(title)
+        header = Gtk.HeaderBar(title='Reversi 0.1',
+                               subtitle="TDT University - Spring 2016",
+                               show_close_button=True)
+        self.set_titlebar(header)
 
         # Create main container
-        self.hpaned_container = Gtk.HPaned()
-        self.hpaned_container.set_properties('position', 800)
-        self.add(self.hpaned_container)
+        self.hcontainer = Gtk.HBox(spacing=10)
+        self.add(self.hcontainer)
 
         # Create drawing area
-        box = Gtk.Box()
-        self.drawing_area = Field.DrawingArea()
-        box.add(self.drawing_area)
-        self.hpaned_container.pack1(box, True, False)
+        self.screen = Screen.Screen()
+        self.hcontainer.pack_start(self.screen, True, True, 0)
 
         # Create right panel
-        self.vbox_panel = Gtk.VBox()
-        self.hpaned_container.pack2(self.vbox_panel, False, True)
+        vbox_panel = Gtk.VBox()
+        self.__init_panel(vbox_panel)
+        self.hcontainer.pack_end(vbox_panel, False, False, 0)
 
+        # Display Application Window
+        self.show_all()
+
+    def __init_panel(self, widget):
+        """Initialize right panel
+
+        :widget: container
+        :returns: none
+
+        """
         # Create panel entries
         lbl_time = Gtk.Label("Time", xalign=0)
         lbl_turn = Gtk.Label("Turn", xalign=0)
@@ -67,16 +74,17 @@ class Application(Gtk.Window):
         self.btn_hiscore.connect('clicked', self.__on_button_hiscore_clicked)
         self.btn_quit = Gtk.Button("Quit")
         self.btn_quit.connect('clicked', self.__on_button_quit_clicked)
-        self.switch_help = Gtk.Switch(valign=Gtk.Align.CENTER)
-        self.switch_help.connect('notify::active',
+        self.switch_hint = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.switch_hint.connect('notify::active',
                                  self.__on_switch_hint_activated)
         self.switch_show_moves = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.switch_show_moves.set_active(True)
         self.switch_show_moves.connect('notify::active',
                                        self.__on_switch_show_move_activated)
 
         # Right panel listbox
         panel_listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
-        self.vbox_panel.add(panel_listbox)
+        widget.add(panel_listbox)
 
         # Sysinfo Label
         row = Gtk.ListBoxRow()
@@ -130,16 +138,16 @@ class Application(Gtk.Window):
         row.add(Gtk.Label(""))
         panel_listbox.add(row)
 
-        # Help row
+        # Setting row
         row = Gtk.ListBoxRow()
-        row.add(Gtk.Label("Help"))
+        row.add(Gtk.Label("Setting"))
         panel_listbox.add(row)
 
         # Show hints row
         row = Gtk.ListBoxRow()
         hbox = Gtk.HBox(spacing=50)
         hbox.pack_start(Gtk.Label("Show Hints", xalign=0), True, True, 0)
-        hbox.pack_start(self.switch_help, False, True, 0)
+        hbox.pack_start(self.switch_hint, False, True, 0)
         row.add(hbox)
         panel_listbox.add(row)
 
@@ -152,17 +160,17 @@ class Application(Gtk.Window):
         panel_listbox.add(row)
 
         # Blank row
-        row = Gtk.ListBoxRow()
-        row.add(Gtk.Label(""))
-        panel_listbox.add(row)
+        # row = Gtk.ListBoxRow()
+        # row.add(Gtk.Label(""))
+        # panel_listbox.add(row)
+
+        # Add center widget
+        widget.set_center_widget(Gtk.Label(""))
 
         # Add buttons
-        self.vbox_panel.pack_end(self.btn_quit, False, True, 0)
-        self.vbox_panel.pack_end(self.btn_hiscore, False, True, 0)
-        self.vbox_panel.pack_end(self.btn_start, False, True, 0)
-
-        # Display Application Window
-        self.show_all()
+        widget.pack_end(self.btn_quit, False, True, 0)
+        widget.pack_end(self.btn_hiscore, False, True, 0)
+        widget.pack_end(self.btn_start, False, True, 0)
 
     def __on_button_start_clicked(self, button):
         """
@@ -175,7 +183,7 @@ class Application(Gtk.Window):
     def __on_button_hiscore_clicked(self, button):
         pass
 
-    def __on_button_quit_clicked(self, button):
+    def __on_button_quit_clicked(self, button, args=""):
         dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.QUESTION,
                                    Gtk.ButtonsType.NONE,
                                    "Do you want to quit?")
