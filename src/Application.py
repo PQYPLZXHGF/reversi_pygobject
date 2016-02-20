@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
-import gi
-gi.require_version('Gtk', '3.0')
+try:
+    import gi
+    gi.require_version('Gtk', '3.0')
+except ImportError:
+    raise('Cannot import "gi" repository')
 
-from gi.repository import Gtk
+try:
+    from gi.repository import Gtk
+except ImportError:
+    raise('Cannot import "Gtk" framework')
 
+import random
 import Screen
+# import Leaderboard
 
 
 class Application(Gtk.Window):
@@ -23,7 +31,7 @@ class Application(Gtk.Window):
         # Default properties
         self.set_title("reversi")
         self.set_border_width(10)
-        self.resize(950, 785)
+        self.set_resizable(False)
 
         # Default events
         self.connect('delete-event', Gtk.main_quit)
@@ -39,7 +47,8 @@ class Application(Gtk.Window):
         self.add(self.hcontainer)
 
         # Create drawing area
-        self.screen = Screen.Screen()
+        self.screen = Screen.Screen(self.matrix)
+        self.connect('button-press-event', self.__on_mouse_pressed)
         self.hcontainer.pack_start(self.screen, True, True, 0)
 
         # Create right panel
@@ -68,44 +77,34 @@ class Application(Gtk.Window):
         lbl_setting = Gtk.Label()
         lbl_setting.set_markup('<b>Setting</b>')
 
-        lbl_time = Gtk.Label(halign=Gtk.Align.START,
-                             valign=Gtk.Align.CENTER)
+        lbl_time = Gtk.Label(halign=Gtk.Align.START)
         lbl_time.set_label("Time")
 
-        lbl_turn = Gtk.Label(halign=Gtk.Align.START,
-                             valign=Gtk.Align.CENTER)
+        lbl_turn = Gtk.Label(halign=Gtk.Align.START)
         lbl_turn.set_label("Turn")
 
-        lbl_score_player = Gtk.Label(halign=Gtk.Align.START,
-                                     valign=Gtk.Align.CENTER)
+        lbl_score_player = Gtk.Label(halign=Gtk.Align.START)
         lbl_score_player.set_label(self.player_label)
 
-        lbl_score_computer = Gtk.Label(halign=Gtk.Align.START,
-                                       valign=Gtk.Align.CENTER)
+        lbl_score_computer = Gtk.Label(halign=Gtk.Align.START)
         lbl_score_computer.set_label(self.computer_label)
 
-        lbl_showhint = Gtk.Label(halign=Gtk.Align.START,
-                                 valign=Gtk.Align.CENTER)
+        lbl_showhint = Gtk.Label(halign=Gtk.Align.START)
         lbl_showhint.set_label('Show hint')
 
-        lbl_showmove = Gtk.Label(halign=Gtk.Align.START,
-                                 valign=Gtk.Align.CENTER)
+        lbl_showmove = Gtk.Label(halign=Gtk.Align.START)
         lbl_showmove.set_label('Show move')
 
-        lbl_time_count = Gtk.Label(halign=Gtk.Align.END,
-                                   valign=Gtk.Align.CENTER)
+        lbl_time_count = Gtk.Label(halign=Gtk.Align.END)
         lbl_time_count.set_label(repr(self.timer))
 
-        lbl_turn_count = Gtk.Label(halign=Gtk.Align.END,
-                                   valign=Gtk.Align.CENTER)
+        lbl_turn_count = Gtk.Label(halign=Gtk.Align.END)
         lbl_turn_count.set_label(repr(self.turn))
 
-        lbl_score_player_count = Gtk.Label(halign=Gtk.Align.END,
-                                           valign=Gtk.Align.CENTER)
+        lbl_score_player_count = Gtk.Label(halign=Gtk.Align.END)
         lbl_score_player_count.set_label(repr(self.player_score))
 
-        lbl_score_computer_count = Gtk.Label(halign=Gtk.Align.END,
-                                             valign=Gtk.Align.CENTER)
+        lbl_score_computer_count = Gtk.Label(halign=Gtk.Align.END)
         lbl_score_computer_count.set_label(repr(self.computer_score))
 
         # Create buttons
@@ -115,7 +114,7 @@ class Application(Gtk.Window):
         self.btn_start.connect('clicked', self.__on_button_start_clicked)
 
         self.btn_hiscore = Gtk.Button()
-        self.btn_hiscore.set_label("High Score")
+        self.btn_hiscore.set_label("High Scores")
         self.btn_hiscore.set_size_request(-1, 50)
         self.btn_hiscore.connect('clicked', self.__on_button_hiscore_clicked)
 
@@ -220,14 +219,34 @@ class Application(Gtk.Window):
         widget.pack_end(self.btn_start, False, True, 0)
 
     def __on_button_start_clicked(self, button):
-        """Start game and change the label to "restart".
+        """Start game and change the label to "restart",
+        "High Scores" label to "Pause"
 
         :button: button
         :return: none
         """
+        self.turn = random.randint(1, 2)
         button.set_label('Restart')
         self.btn_hiscore.set_label('Pause')
         pass
+
+    def __on_mouse_pressed(self, widget, event):
+        """Handle mouse click on drawing area
+
+        :widget: Gtk.DrawingArea
+        :event: mouse click
+        :returns: none
+
+        """
+        row, col = self.get_position_in_matrix(int(event.x), int(event.y))
+        print('Mouse clicked on', col, row)
+
+        # if self.turn == 1 and self.is_valid_move(row, col):
+        # TODO recheck
+        if self.is_valid_move(row, col):
+            self.matrix[row][col] = self.turn
+            widget.queue_draw()
+            self.turn_switch()
 
     def __on_button_hiscore_clicked(self, button, args=""):
         """Show the leaderboard and receive new high score (if any).
@@ -237,6 +256,9 @@ class Application(Gtk.Window):
         :returns: none
 
         """
+        # leaderboard = Leaderboard.Leaderboard(args)
+        # leaderboard.show_all()
+
         pass
 
     def __on_button_quit_clicked(self, button, args=""):
@@ -295,12 +317,65 @@ class Application(Gtk.Window):
 
         print("Switch \"Show moves\" was turned", state)
 
+    def is_valid_move(self, x, y):
+        """Check if the movement in current position is a valid move
+
+        :x: matrix row
+        :y: matrix column
+        :returns: True if is a valid move, false otherwise
+
+
+        """
+        if self.matrix[x][y] != 0:
+            return False
+
+        if x >= 0 and y >= 0:
+            return True
+
+        return False
+
+    def get_position_in_matrix(self, position_x, position_y):
+        """Determine the current pair of x, y position is in which cell of
+           matrix
+
+        :position_x: x position in pixel
+        :position_y: y position in pixel
+        :returns: position x, y of matrix, (-1, -1) if out-of-bound
+        """
+        if (position_x < self.screen.cell_size) \
+           or (position_x > self.screen.size - self.screen.cell_size) \
+           or (position_y < self.screen.cell_size) \
+           or (position_y > self.screen.size - self.screen.cell_size):
+            return -1, -1
+
+        for row in range(8):
+            if (row + 2) * self.screen.cell_size > position_y:
+                break
+
+        for col in range(8):
+            if (col + 2) * self.screen.cell_size > position_x:
+                break
+
+        return row, col
+
+    def turn_switch(self):
+        if self.turn == 1:
+            self.turn = 2
+        elif self.turn == 2:
+            self.turn = 1
+
     timer = 0.00
     turn = 0
     player_label = "Player"
     player_score = 0
     computer_label = "Computer"
     computer_score = 0
+
+    matrix = [[0 for col in range(8)] for row in range(8)]
+    matrix[3][4] = 1
+    matrix[4][3] = 1
+    matrix[3][3] = 2
+    matrix[4][4] = 2
 
 application = Application()
 Gtk.main()
