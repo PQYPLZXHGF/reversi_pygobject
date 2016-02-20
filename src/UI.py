@@ -32,6 +32,7 @@ class Screen(Gtk.DrawingArea):
         Gtk.DrawingArea.__init__(self)
         self.connect('draw', self.__on_draw)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
         self.set_size_request(self.size, self.size)
 
         self.matrix = matrix
@@ -115,7 +116,6 @@ class Screen(Gtk.DrawingArea):
         ctx.stroke()  # Flux ctx
 
         self.__draw_matrix(self.matrix, ctx)
-        self.print_matrix()
 
     def __on_mouse_press(self, widget, event):
         pass
@@ -125,8 +125,8 @@ class Screen(Gtk.DrawingArea):
 
         :position_x: row number in matrix
         :position_y: column number in matrix
-        :color: color in format {'r': x, 'g': float, 'b': float} where
-                float is a float in a number from 0 to 1
+        :color: color in format {'r': val, 'g': val, 'b': val} where
+                val is a float in a number from 0 to 1
         :returns: none
 
         """
@@ -145,22 +145,13 @@ class Screen(Gtk.DrawingArea):
                     self.cell_size / 2 - 5, 0, 7.2)
             ctx.stroke()
 
-    def connect_positions(self, x0, y0, x1, y1, color):
-        """Draw pieces on connected places. Use this to draw a scored line.
-
-        :x0: TODO
-        :y0: TODO
-        :x1: TODO
-        :y1: TODO
-        :color: TODO
-        :returns: none
-        """
-
     def set_color(self, player_color, computer_color):
         """Set color for player and computer's pieces
 
-        :player_color: TODO
-        :computer_color: TODO
+        :player_color: color in format {'r': val, 'g': val, 'b': val} where
+                       val is a float in a number from 0 to 1
+        :computer_color: color in format {'r': val, 'g': val, 'b': val} where
+                         val is a float in a number from 0 to 1
         :returns: none
         """
         self.player_color = player_color
@@ -199,13 +190,12 @@ class Screen(Gtk.DrawingArea):
     size = 500
     cell_size = size / 10
 
-    bg_color = {'r': 0.95, 'g': 0.95, 'b': 0.95}  # Gray
+    bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9}  # Gray
     fg_color = {'r': 0, 'g': 0, 'b': 0}  # Black
 
     player_color = {'r': 0, 'g': 0, 'b': 0}  # Black
     computer_color = {'r': 1, 'g': 1, 'b': 1}  # White
-
-    current_player = None
+    hint_color = {'r': 0.5, 'g': 0.5, 'b': 1}
 
 if __name__ == '__main__':
     print("Hello there! Please do not execute this file alone.")

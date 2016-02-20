@@ -12,8 +12,8 @@ except ImportError:
     raise('Cannot import "Gtk" framework')
 
 import random
-import Screen
-# import Leaderboard
+import UI
+import Leaderboard
 
 
 class Application(Gtk.Window):
@@ -36,6 +36,9 @@ class Application(Gtk.Window):
         # Default events
         self.connect('delete-event', Gtk.main_quit)
 
+        # Initialize the matrix
+        self.__init_matrix()
+
         # Create Title bar
         header = Gtk.HeaderBar(title='Reversi 0.1',
                                subtitle="TDT University - Spring 2016",
@@ -47,8 +50,11 @@ class Application(Gtk.Window):
         self.add(self.hcontainer)
 
         # Create drawing area
-        self.screen = Screen.Screen(self.matrix)
-        self.connect('button-press-event', self.__on_mouse_pressed)
+        self.screen = UI.Screen(self.matrix)
+        self.screen.connect('button-press-event',
+                            self.on_mouse_pressed_drawingarea)
+        self.screen.connect('button-release-event',
+                            self.on_mouse_released_drawingarea)
         self.hcontainer.pack_start(self.screen, True, True, 0)
 
         # Create right panel
@@ -59,8 +65,20 @@ class Application(Gtk.Window):
         # Display Application Window
         self.show_all()
 
+    def __init_matrix(self):
+        """Initialize the matrix
+
+        :returns: none
+
+        """
+        self.matrix = [[0 for col in range(8)] for row in range(8)]
+        self.matrix[3][4] = 1
+        self.matrix[4][3] = 1
+        self.matrix[3][3] = 2
+        self.matrix[4][4] = 2
+
     def __init_panel(self, widget):
-        """Initialize right panel
+        """Initialize right panel and connect it to events
 
         :widget: container
         :returns: none
@@ -111,26 +129,26 @@ class Application(Gtk.Window):
         self.btn_start = Gtk.Button()
         self.btn_start.set_label("Start Game")
         self.btn_start.set_size_request(-1, 50)
-        self.btn_start.connect('clicked', self.__on_button_start_clicked)
+        self.btn_start.connect('clicked', self.on_button_start_clicked)
 
         self.btn_hiscore = Gtk.Button()
         self.btn_hiscore.set_label("High Scores")
         self.btn_hiscore.set_size_request(-1, 50)
-        self.btn_hiscore.connect('clicked', self.__on_button_hiscore_clicked)
+        self.btn_hiscore.connect('clicked', self.on_button_hiscore_clicked)
 
         self.btn_quit = Gtk.Button()
         self.btn_quit.set_size_request(-1, 50)
         self.btn_quit.set_label("Quit")
-        self.btn_quit.connect('clicked', self.__on_button_quit_clicked)
+        self.btn_quit.connect('clicked', self.on_button_quit_clicked)
 
         self.switch_hint = Gtk.Switch(valign=Gtk.Align.END)
         self.switch_hint.connect('notify::active',
-                                 self.__on_switch_hint_activated)
+                                 self.on_switch_hint_activated)
 
         self.switch_show_moves = Gtk.Switch(valign=Gtk.Align.END)
         self.switch_show_moves.set_active(True)
         self.switch_show_moves.connect('notify::active',
-                                       self.__on_switch_show_move_activated)
+                                       self.on_switch_show_move_activated)
 
         # Right panel listbox
         panel_listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
@@ -218,20 +236,63 @@ class Application(Gtk.Window):
         widget.pack_end(self.btn_hiscore, False, True, 0)
         widget.pack_end(self.btn_start, False, True, 0)
 
-    def __on_button_start_clicked(self, button):
+    def __init_newgame(self):
+        """Initialize new game
+
+        :returns: none
+
+        """
+        self.__init_matrix()
+        self.screen.matrix = self.matrix
+        self.game_state = 1
+        self.timer = 0
+        self.turn = 0
+        self.player_score = 0
+        self.computer_score = 0
+
+    def on_button_start_clicked(self, button):
         """Start game and change the label to "restart",
         "High Scores" label to "Pause"
 
         :button: button
         :return: none
+
         """
         self.turn = random.randint(1, 2)
-        button.set_label('Restart')
-        self.btn_hiscore.set_label('Pause')
+
+        if self.game_state == 1:
+            self.__init_matrix()
+            self.screen.matrix = self.matrix
+            self.screen.queue_draw()
+        elif self.game_state == 2:
+            pass
+        else:  # self.game_state == 0
+            button.set_label('Restart')
+            self.btn_hiscore.set_label('Pause')
+            self.btn_quit.set_label('Surrender')
+            self.game_state = 1
+            self.__init_matrix()
+            self.screen.matrix = self.matrix
+            self.screen.queue_draw()
         pass
 
-    def __on_mouse_pressed(self, widget, event):
-        """Handle mouse click on drawing area
+    def on_mouse_pressed_drawingarea(self, widget, event):
+        """Handle mouse press event: Save current mouse clicked position and
+        pass the event to next handler.
+
+        :widget: Gtk.DrawingArea
+        :event: mouse event
+        :return: none
+
+        """
+
+        self.pre_x, self.pre_y = self.get_position_in_matrix(int(event.x),
+                                                             int(event.y))
+
+        return False  # Pass the event to next handler
+
+    def on_mouse_released_drawingarea(self, widget, event):
+        """Handle mouse release on drawing area
 
         :widget: Gtk.DrawingArea
         :event: mouse click
@@ -239,7 +300,13 @@ class Application(Gtk.Window):
 
         """
         row, col = self.get_position_in_matrix(int(event.x), int(event.y))
-        print('Mouse clicked on', col, row)
+
+        """
+        Check if mouse pressed event and mouse released event is is the
+        same cell. If not, ignore move.
+        """
+        if not (self.pre_x == row and self.pre_y == col):
+            return
 
         # if self.turn == 1 and self.is_valid_move(row, col):
         # TODO recheck
@@ -248,7 +315,9 @@ class Application(Gtk.Window):
             widget.queue_draw()
             self.turn_switch()
 
-    def __on_button_hiscore_clicked(self, button, args=""):
+        return True
+
+    def on_button_hiscore_clicked(self, button, args=""):
         """Show the leaderboard and receive new high score (if any).
 
         :button: button
@@ -256,40 +325,48 @@ class Application(Gtk.Window):
         :returns: none
 
         """
-        # leaderboard = Leaderboard.Leaderboard(args)
-        # leaderboard.show_all()
+        leaderboard = Leaderboard.Leaderboard()
+        leaderboard.add_highscore(args)
+        leaderboard.show_all()
 
         pass
 
-    def __on_button_quit_clicked(self, button, args=""):
+    def on_button_quit_clicked(self, button, args=""):
         """Show the quit confirmation dialog.
 
         :button: button
         :args: TODO
         :returns: none
         """
-        dialog = Gtk.MessageDialog(parent=self)
-        dialog.set_markup("<b><big>Do you want to quit?</big></b>")
-        dialog.format_secondary_text("We will wait for you!")
-        dialog.set_properties('buttons', Gtk.ButtonsType.NONE)
-        dialog.set_properties('message-type', Gtk.MessageType.QUESTION)
-
-        dialog.add_button("Not now", Gtk.ResponseType.CANCEL)
-        dialog.add_button("I said quit!", Gtk.ResponseType.OK)
-
-        response = dialog.run()
-
-        if response == Gtk.ResponseType.OK:
-            Gtk.main_quit(self)
+        if self.game_state == 1:
+            self.game_state = 0
+            self.btn_start.set_label('Start Over')
+            self.btn_hiscore.set_label('High Scores')
+            button.set_label('Quit')
+            self.turn = 0
         else:
-            pass
+            dialog = Gtk.MessageDialog(parent=self)
+            dialog.set_markup("<b><big>Do you want to quit?</big></b>")
+            dialog.format_secondary_text("We will wait for you!")
+            dialog.set_properties('buttons', Gtk.ButtonsType.NONE)
+            dialog.set_properties('message-type', Gtk.MessageType.QUESTION)
 
-        dialog.destroy()
+            dialog.add_button("Not now", Gtk.ResponseType.CANCEL)
+            dialog.add_button("I said quit!", Gtk.ResponseType.OK)
 
-    def __on_button_restart_clicked(self, button):
+            response = dialog.run()
+
+            if response == Gtk.ResponseType.OK:
+                Gtk.main_quit(self)
+            else:
+                pass
+
+            dialog.destroy()
+
+    def on_button_restart_clicked(self, button):
         pass
 
-    def __on_switch_hint_activated(self, switch, args=""):
+    def on_switch_hint_activated(self, switch, args=""):
         """Show hints.
 
         :switch: switch
@@ -303,7 +380,7 @@ class Application(Gtk.Window):
 
         print("Switch \"Show hint\" was turned", state)
 
-    def __on_switch_show_move_activated(self, switch, args=""):
+    def on_switch_show_move_activated(self, switch, args=""):
         """Show moves.
 
         :switch: switch
@@ -333,6 +410,19 @@ class Application(Gtk.Window):
             return True
 
         return False
+
+    def get_valid_moves(self, x, y):
+        """Get a list of valid moves for the current position
+
+        :x: matrix row
+        :y: matrix column
+        :returns: List of valid moves for current turn
+
+        """
+        if self.turn == 1:
+            pass
+        elif self.turn == 2:
+            pass
 
     def get_position_in_matrix(self, position_x, position_y):
         """Determine the current pair of x, y position is in which cell of
@@ -364,18 +454,32 @@ class Application(Gtk.Window):
         elif self.turn == 2:
             self.turn = 1
 
+    def connect_positions(self, x0, y0, x1, y1, color):
+        """Draw pieces on connected places. Use this to draw a scored line.
+
+        :x0: matrix's x source position
+        :y0: matrix's y source position
+        :x1: matrix's x destination position
+        :y1: matrix's y destination position
+        :color: color in format {'r': val, 'g': val, 'b': val} where
+                'val' is a float in a number from 0 to 1
+
+        :returns: none
+        """
+        pass
+
     timer = 0.00
     turn = 0
     player_label = "Player"
     player_score = 0
     computer_label = "Computer"
     computer_score = 0
+    game_state = 0
 
-    matrix = [[0 for col in range(8)] for row in range(8)]
-    matrix[3][4] = 1
-    matrix[4][3] = 1
-    matrix[3][3] = 2
-    matrix[4][4] = 2
+    pre_x = None
+    pre_y = None
+
+    matrix = None
 
 application = Application()
 Gtk.main()
