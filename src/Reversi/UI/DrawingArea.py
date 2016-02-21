@@ -53,14 +53,14 @@ class DrawingArea(Gtk.DrawingArea):
         """
         ctx.set_antialias(cairo.ANTIALIAS_SUBPIXEL)
         # Fill background's color
-        ctx.set_source_rgb(self.bg_color['r'], self.bg_color['g'],
-                           self.bg_color['b'])
+        ctx.set_source_rgba(self.bg_color['r'], self.bg_color['g'],
+                            self.bg_color['b'], self.bg_color['a'])
         ctx.rectangle(0, 0, self.size, self.size)
         ctx.fill()
 
         # Draw matrix
-        ctx.set_source_rgb(self.fg_color['r'], self.fg_color['g'],
-                           self.fg_color['b'])
+        ctx.set_source_rgba(self.fg_color['r'], self.fg_color['g'],
+                            self.fg_color['b'], self.fg_color['a'])
 
         for i in range(1, 10):
             ctx.move_to(self.cell_size * i, self.cell_size)
@@ -121,43 +121,39 @@ class DrawingArea(Gtk.DrawingArea):
         pass
 
     def draw_piece(self, ctx, position_x, position_y, color,
-                   border=False, hint=False):
+                   border=False):
         """Draw piece on selected position
 
         :position_x: row number in matrix
         :position_y: column number in matrix
-        :color: color in format {'r': val, 'g': val, 'b': val} where
-                val is a float in a number from 0 to 1
+        :color: color in format {'r': val, 'g': val, 'b': val, 'a': val}
+                where val is a float in a number from 0 to 1
         :returns: none
 
         """
-        if hint:
-            radius = self.cell_size / 10
-        else:
-            radius = self.cell_size / 2 - 5
 
-        ctx.set_source_rgb(color['r'], color['g'], color['b'])
+        ctx.set_source_rgba(color['r'], color['g'], color['b'], color['a'])
         ctx.arc((position_y + 1) * self.cell_size + self.cell_size / 2,
                 (position_x + 1) * self.cell_size + self.cell_size / 2,
-                radius, 0, 7.2)
+                self.radius, 0, 7.2)
         ctx.fill()
 
         if border:
             ctx.set_line_width(1)
-            ctx.set_source_rgb(self.fg_color['r'], self.fg_color['g'],
-                               self.fg_color['b'])
+            ctx.set_source_rgba(self.fg_color['r'], self.fg_color['g'],
+                                self.fg_color['b'], self.fg_color['a'])
             ctx.arc((position_y + 1) * self.cell_size + self.cell_size / 2,
                     (position_x + 1) * self.cell_size + self.cell_size / 2,
-                    radius, 0, 7.2)
+                    self.radius, 0, 7.2)
             ctx.stroke()
 
     def set_color(self, player_color, computer_color):
         """Set color for player and computer's pieces
 
-        :player_color: color in format {'r': val, 'g': val, 'b': val} where
-                       val is a float in a number from 0 to 1
-        :computer_color: color in format {'r': val, 'g': val, 'b': val} where
-                         val is a float in a number from 0 to 1
+        :player_color: color in format {'r': val, 'g': val, 'b': val, 'a': val}
+                       where val is a float in a number from 0 to 1
+        :computer_color: color in format {'r': val, 'g': val, 'b': val,
+                        'a': val} where val is a float in a number from 0 to 1
         :returns: none
         """
         self.player_color = player_color
@@ -195,10 +191,11 @@ class DrawingArea(Gtk.DrawingArea):
     board_line_width = 2
     size = 500
     cell_size = size / 10
+    radius = cell_size / 2 - 5
 
-    bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9}  # Gray
-    fg_color = {'r': 0, 'g': 0, 'b': 0}  # Black
+    bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9, 'a': 1}  # Gray
+    fg_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
 
-    player_color = {'r': 0, 'g': 0, 'b': 0}  # Black
-    computer_color = {'r': 1, 'g': 1, 'b': 1}  # White
-    hint_color = {'r': 0, 'g': 0.7, 'b': 1}
+    player_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
+    computer_color = {'r': 1, 'g': 1, 'b': 1, 'a': 1}  # White
+    hint_color = {'r': 1, 'g': 1, 'b': 1, 'a': 0.3}

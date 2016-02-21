@@ -268,6 +268,9 @@ class Application(Gtk.Window):
         self.btn_hiscore.set_label("Pause")
         self.btn_quit.set_label("Surrender")
 
+        self.btn_start.set_sensitive(True)
+        self.btn_quit.set_sensitive(True)
+
         self.update_turn_label()
         self.update_score_label()
 
@@ -299,6 +302,9 @@ class Application(Gtk.Window):
         self.btn_start.set_label("Start Over")
         self.btn_hiscore.set_label("High Scores")
         self.btn_quit.set_label("Quit")
+
+        self.btn_start.set_sensitive(True)
+        self.btn_quit.set_sensitive(True)
 
     def on_button_start_clicked(self, button):
         """Handle Start/Restart button
@@ -373,6 +379,7 @@ class Application(Gtk.Window):
         if self.game_state == GameStatus.PLAYING \
                 or self.game_state == GameStatus.PAUSED:
             # Create surrender confirmation dialog
+            self.do_pause_game()
             dialog = Gtk.MessageDialog(parent=self)
             dialog.set_markup("<b><big>Do you want to surrender?</big></b>")
             dialog.format_secondary_text("Why so soon? Just a lil' more!")
@@ -389,7 +396,7 @@ class Application(Gtk.Window):
                 self.print_debug("\nYou're weak...")
                 self.print_debug("--------------")
             else:
-                pass
+                self.do_resume_game()
 
             dialog.destroy()
         else:
@@ -643,20 +650,6 @@ class Application(Gtk.Window):
             self.current_player = Player.COMPUTER
         elif self.current_player == Player.COMPUTER:
             self.current_player = Player.PLAYER
-
-    def connect_positions(self, x0, y0, x1, y1, color):
-        """Draw pieces on connected places. Use this to draw a scored line.
-
-        :x0: matrix's x source position
-        :y0: matrix's y source position
-        :x1: matrix's x destination position
-        :y1: matrix's y destination position
-        :color: color in format {'r': val, 'g': val, 'b': val} where
-                'val' is a float in a number from 0 to 1
-
-        :returns: none
-        """
-        pass
 
     def print_matrix(self):
         """Print the current matrix
