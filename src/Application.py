@@ -285,6 +285,9 @@ class Application(Gtk.Window):
         self.btn_start.set_sensitive(False)
         self.btn_quit.set_sensitive(False)
 
+        self.screen.is_paused = True
+        self.screen.queue_draw()
+
     def do_resume_game(self):
         self.game_state = GameStatus.PLAYING
         self.run_time_counter()
@@ -295,6 +298,9 @@ class Application(Gtk.Window):
 
         self.btn_start.set_sensitive(True)
         self.btn_quit.set_sensitive(True)
+
+        self.screen.is_paused = False
+        self.screen.queue_draw()
 
     def do_stop_game(self):
         self.game_state = GameStatus.STOPPED
@@ -713,7 +719,6 @@ class Application(Gtk.Window):
             print(*msg)
 
     timer = 0
-    timer_formatted = "0s"
     turn = 0
     player_label = "Player"
     player_score = 2

@@ -41,8 +41,11 @@ class DrawingArea(Gtk.DrawingArea):
 
     def __on_draw(self, widget, ctx):
         # Init board
-        self.__init_board(ctx)
-        self.__draw_matrix(self.matrix, ctx)
+        if self.is_paused:
+            self.__draw_pause_screen(ctx)
+        else:
+            self.__init_board(ctx)
+            self.__draw_matrix(self.matrix, ctx)
 
     def __init_board(self, ctx):
         """Draw chess board
@@ -147,6 +150,35 @@ class DrawingArea(Gtk.DrawingArea):
                     self.radius, 0, 7.2)
             ctx.stroke()
 
+    def __draw_pause_screen(self, ctx):
+        """Draw pause screen
+
+        :returns: none
+
+        """
+        # Fill background
+        ctx.set_source_rgba(self.bg_color['r'], self.bg_color['g'],
+                            self.bg_color['b'], self.bg_color['a'])
+        ctx.rectangle(0, 0, self.size, self.size)
+        ctx.fill()
+
+        # Draw pause msg
+        ctx.select_font_face("PragmataPro for Powerline",
+                             cairo.FONT_SLANT_NORMAL,
+                             cairo.FONT_WEIGHT_NORMAL)
+        ctx.set_font_size(60)
+
+        ctx.set_source_rgba(self.fg_color['r'], self.fg_color['g'],
+                            self.fg_color['b'], self.fg_color['a'])
+
+        x_bearing, y_bearing, width, height = ctx.text_extents(
+            self.pause_msg
+        )[:4]
+
+        ctx.move_to(self.size / 2 - width / 2,
+                    self.size / 2 + height / 2)
+        ctx.show_text(self.pause_msg)
+
     def set_color(self, player_color, computer_color):
         """Set color for player and computer's pieces
 
@@ -175,23 +207,13 @@ class DrawingArea(Gtk.DrawingArea):
                 else:
                     self.draw_piece(ctx, row, col, self.bg_color)
 
-    def print_matrix(self):
-        for i in range(8):
-            print(self.matrix[i][:])
-
-        print("")
-
-    def game_pause(self, ctx):
-        pass
-
-    def game_resume(self, ctx):
-        pass
-
     matrix = None
     board_line_width = 2
     size = 500
     cell_size = size / 10
     radius = cell_size / 2 - 5
+    pause_msg = "GAME PAUSED"
+    is_paused = False
 
     bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9, 'a': 1}  # Gray
     fg_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
