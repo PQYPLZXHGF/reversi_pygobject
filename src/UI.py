@@ -22,7 +22,7 @@ except ImportError:
     raise('Cannot import "cairo" framework')
 
 
-class Screen(Gtk.DrawingArea):
+class DrawingArea(Gtk.DrawingArea):
 
     """
     Custom widget to act as playing screen
@@ -120,7 +120,8 @@ class Screen(Gtk.DrawingArea):
     def __on_mouse_press(self, widget, event):
         pass
 
-    def draw_piece(self, ctx, position_x, position_y, color, border=False):
+    def draw_piece(self, ctx, position_x, position_y, color,
+                   border=False, hint=False):
         """Draw piece on selected position
 
         :position_x: row number in matrix
@@ -130,10 +131,15 @@ class Screen(Gtk.DrawingArea):
         :returns: none
 
         """
+        if hint:
+            radius = self.cell_size / 10
+        else:
+            radius = self.cell_size / 2 - 5
+
         ctx.set_source_rgb(color['r'], color['g'], color['b'])
         ctx.arc((position_y + 1) * self.cell_size + self.cell_size / 2,
                 (position_x + 1) * self.cell_size + self.cell_size / 2,
-                self.cell_size / 2 - 5, 0, 7.2)
+                radius, 0, 7.2)
         ctx.fill()
 
         if border:
@@ -142,7 +148,7 @@ class Screen(Gtk.DrawingArea):
                                self.fg_color['b'])
             ctx.arc((position_y + 1) * self.cell_size + self.cell_size / 2,
                     (position_x + 1) * self.cell_size + self.cell_size / 2,
-                    self.cell_size / 2 - 5, 0, 7.2)
+                    radius, 0, 7.2)
             ctx.stroke()
 
     def set_color(self, player_color, computer_color):
@@ -195,7 +201,4 @@ class Screen(Gtk.DrawingArea):
 
     player_color = {'r': 0, 'g': 0, 'b': 0}  # Black
     computer_color = {'r': 1, 'g': 1, 'b': 1}  # White
-    hint_color = {'r': 0.5, 'g': 0.5, 'b': 1}
-
-if __name__ == '__main__':
-    print("Hello there! Please do not execute this file alone.")
+    hint_color = {'r': 0, 'g': 0.7, 'b': 1}

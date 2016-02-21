@@ -50,7 +50,7 @@ class Application(Gtk.Window):
         self.add(self.hcontainer)
 
         # Create drawing area
-        self.screen = UI.Screen(self.matrix)
+        self.screen = UI.DrawingArea(self.matrix)
         self.screen.connect('button-press-event',
                             self.on_mouse_pressed_drawingarea)
         self.screen.connect('button-release-event',
@@ -247,6 +247,7 @@ class Application(Gtk.Window):
         self.game_state = 1
         self.timer = 0
         self.turn = 0
+        self.current_player = 0
         self.player_score = 0
         self.computer_score = 0
 
@@ -258,7 +259,7 @@ class Application(Gtk.Window):
         :return: none
 
         """
-        self.turn = random.randint(1, 2)
+        self.current_player = random.randint(1, 2)
 
         if self.game_state == 1:
             self.__init_matrix()
@@ -274,7 +275,6 @@ class Application(Gtk.Window):
             self.__init_matrix()
             self.screen.matrix = self.matrix
             self.screen.queue_draw()
-        pass
 
     def on_mouse_pressed_drawingarea(self, widget, event):
         """Handle mouse press event: Save current mouse clicked position and
@@ -310,11 +310,36 @@ class Application(Gtk.Window):
 
         # if self.turn == 1 and self.is_valid_move(row, col):
         # TODO recheck
-        if self.is_valid_move(row, col):
-            self.matrix[row][col] = self.turn
-            widget.queue_draw()
-            self.turn_switch()
+        valid_moves = self.is_valid_move(row, col)
 
+        if valid_moves is False:
+            print("Invalid move")
+            return True
+
+        for i in range(len(valid_moves)):
+            x, y = valid_moves[i][:]
+            self.matrix[x][y] = self.current_player
+            print("DEBUG PLAYER", self.current_player)
+
+        self.matrix[row][col] = self.current_player
+        widget.queue_draw()
+
+        for i in range(len(valid_moves)):
+            x, y = valid_moves[i][:]
+            self.matrix[x][y] = self.current_player
+
+        # DEBUG
+        print("Mouse:", col, row)
+        print("Validate movement:", self.is_valid_move(row, col))
+        print("Active Player:", self.current_player)
+        print("Score:", "Player", self.player_score,
+              "Computer", self.computer_score)
+        print("Matrix:")
+        self.print_matrix()
+        print("Valid moves:")
+        print(valid_moves[:])
+
+        self.player_switch()
         return True
 
     def on_button_hiscore_clicked(self, button, args=""):
@@ -343,7 +368,7 @@ class Application(Gtk.Window):
             self.btn_start.set_label('Start Over')
             self.btn_hiscore.set_label('High Scores')
             button.set_label('Quit')
-            self.turn = 0
+            self.current_player = 0
         else:
             dialog = Gtk.MessageDialog(parent=self)
             dialog.set_markup("<b><big>Do you want to quit?</big></b>")
@@ -401,28 +426,80 @@ class Application(Gtk.Window):
         :y: matrix column
         :returns: True if is a valid move, false otherwise
 
-
         """
         if self.matrix[x][y] != 0:
             return False
 
-        if x >= 0 and y >= 0:
-            return True
+        if not self.is_on_matrix(x, y):
+            return False
 
-        return False
+        valid_moves = self.get_valid_moves(x, y)
+
+        if valid_moves is False:
+            return False
+
+        return valid_moves
 
     def get_valid_moves(self, x, y):
         """Get a list of valid moves for the current position
 
         :x: matrix row
         :y: matrix column
-        :returns: List of valid moves for current turn
+        :returns: List of valid moves for current turn and its tiles to flip
 
         """
-        if self.turn == 1:
-            pass
-        elif self.turn == 2:
-            pass
+        # tile = self.matrix[x][y]
+
+        tile = self.current_player
+
+        if tile == 1:
+            other_tile = 2
+        elif tile == 2:
+            other_tile = 1
+
+        flip = []
+
+        for x_direction, y_direction in [[-1, -1], [-1, 0], [-1, 1],
+                                         [0, -1], [0, 1],
+                                         [1, -1], [1, 0], [1, 1]]:
+            x_start, y_start = x, y
+            x_start += x_direction
+            y_start += y_direction
+
+            if self.is_on_matrix(x_start, y_start) \
+                    and self.matrix[x_start][y_start] == other_tile:
+                x_start += x_direction
+                y_start += y_direction
+
+                if not self.is_on_matrix(x_start, y_start):
+                    continue
+
+                while self.matrix[x_start][y_start] == other_tile:
+                    x_start += x_direction
+                    y_start += y_direction
+
+                    if not self.is_on_matrix(x_start, y_start):
+                        break
+
+                if not self.is_on_matrix(x_start, y_start):
+                    continue
+
+                if self.matrix[x_start][y_start] == tile:
+                    while True:
+                        x_start -= x_direction
+                        y_start -= y_direction
+
+                        if x_start == x and y_start == y:
+                            break
+
+                        flip.append([x_start, y_start])
+
+        # self.matrix[x][y] = 0
+
+        if len(flip) == 0:
+            return False
+
+        return flip
 
     def get_position_in_matrix(self, position_x, position_y):
         """Determine the current pair of x, y position is in which cell of
@@ -448,11 +525,23 @@ class Application(Gtk.Window):
 
         return row, col
 
-    def turn_switch(self):
-        if self.turn == 1:
-            self.turn = 2
-        elif self.turn == 2:
-            self.turn = 1
+    def is_on_matrix(self, x, y):
+        """
+        Check if current position is on matrix
+
+        :x: matrix column
+        :y: matrix row
+        """
+        if x < 0 or y < 0 or x > 7 or y > 7:
+            return False
+
+        return True
+
+    def player_switch(self):
+        if self.current_player == 1:
+            self.current_player = 2
+        elif self.current_player == 2:
+            self.current_player = 1
 
     def connect_positions(self, x0, y0, x1, y1, color):
         """Draw pieces on connected places. Use this to draw a scored line.
@@ -468,6 +557,15 @@ class Application(Gtk.Window):
         """
         pass
 
+    def print_matrix(self):
+        """Print the current matrix
+
+        :returns: none
+
+        """
+        for i in range(7):
+            print(self.matrix[i][:])
+
     timer = 0.00
     turn = 0
     player_label = "Player"
@@ -475,6 +573,7 @@ class Application(Gtk.Window):
     computer_label = "Computer"
     computer_score = 0
     game_state = 0
+    current_player = 0
 
     pre_x = None
     pre_y = None
