@@ -10,7 +10,7 @@ class Leaderboard(Gtk.Window):
 
     """Leaderboard to save high scores."""
 
-    def __init__(self, new_score=""):
+    def __init__(self, *args):
         """Initialize the leaderboard.
 
         :new_score: TODO
@@ -19,11 +19,7 @@ class Leaderboard(Gtk.Window):
         Gtk.Window.__init__(self)
         self.connect('delete-event', self.__on_quit)
 
-        self._new_score = new_score
-
-        # self.show_all()
-
-    def add_highscore(self, name, score, time):
+    def add_highscore(self, *args):
         """Add new high score to the leaderboard.
 
         :name: player's name

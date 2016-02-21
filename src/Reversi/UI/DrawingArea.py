@@ -28,7 +28,7 @@ class DrawingArea(Gtk.DrawingArea):
     Custom widget to act as playing screen
     """
 
-    def __init__(self, matrix):
+    def __init__(self, matrix, *args):
         Gtk.DrawingArea.__init__(self)
         self.connect('draw', self.__on_draw)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
