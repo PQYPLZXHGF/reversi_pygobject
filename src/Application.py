@@ -539,67 +539,6 @@ class Application(Gtk.Window):
             print("\nDebug turned off")
             print("----------------\n")
 
-    def get_valid_moves(self, x, y):
-        """Get a list of valid moves for the current position
-
-        :x: matrix row
-        :y: matrix column
-        :returns: List of valid moves for current turn and its tiles to flip
-
-        """
-
-        if self.matrix[x][y] != 0 or not self.is_on_matrix(x, y):
-            return False
-
-        tile = self.current_player
-
-        if tile == Player.PLAYER:
-            other_tile = Player.COMPUTER
-        elif tile == Player.COMPUTER:
-            other_tile = Player.PLAYER
-
-        flip = []
-
-        for x_direction, y_direction in [[-1, -1], [-1, 0], [-1, 1],
-                                         [0, -1], [0, 1],
-                                         [1, -1], [1, 0], [1, 1]]:
-            x_start, y_start = x, y
-            x_start += x_direction
-            y_start += y_direction
-
-            if self.is_on_matrix(x_start, y_start) \
-                    and self.matrix[x_start][y_start] == other_tile:
-                x_start += x_direction
-                y_start += y_direction
-
-                if not self.is_on_matrix(x_start, y_start):
-                    continue
-
-                while self.matrix[x_start][y_start] == other_tile:
-                    x_start += x_direction
-                    y_start += y_direction
-
-                    if not self.is_on_matrix(x_start, y_start):
-                        break
-
-                if not self.is_on_matrix(x_start, y_start):
-                    continue
-
-                if self.matrix[x_start][y_start] == tile:
-                    while True:
-                        x_start -= x_direction
-                        y_start -= y_direction
-
-                        if x_start == x and y_start == y:
-                            break
-
-                        flip.append([x_start, y_start])
-
-        if len(flip) == 0:
-            return False
-
-        return flip
-
     def get_position_in_matrix(self, position_x, position_y):
         """Determine the current pair of x, y position is in which cell of
            matrix
@@ -629,6 +568,28 @@ class Application(Gtk.Window):
             self.current_player = Player.COMPUTER
         elif self.current_player == Player.COMPUTER:
             self.current_player = Player.PLAYER
+
+        if len(
+            Algorithm().get_available_moves(self.matrix,
+                                            self.current_player)
+        ) == 0:
+            self.stop_time_counter()
+            self.do_stop_game()
+
+            if self.player_score > self.computer_score:
+                self.print_debug("\nCongratulation!")
+                self.print_debug("---------------")
+                self.print_debug("You beat AI for",
+                                 self.player_score - self.computer_score,
+                                 "points")
+            elif self.player_score < self.computer_score:
+                self.print_debug("\nNot always luck is by your side...")
+                self.print_debug("------------------------------------")
+                self.print_debug("AI got over you by",
+                                 self.computer_label - self.player_score,
+                                 "points")
+
+            # TODO add player to leaderboard
 
     def print_matrix(self):
         """Print the current matrix

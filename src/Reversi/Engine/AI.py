@@ -24,7 +24,7 @@ class Algorithm():
 
             for move in avail_moves:
                 x, y = move[:]
-                val = self.calc_matrix_val(x, y, Player.COMPUTER, matrix)
+                val = self.__calc_matrix_val(x, y, Player.COMPUTER, matrix)
                 result_list.append(move, val)
 
             return self.__get_max_pair(result_list)
@@ -58,7 +58,7 @@ class Algorithm():
 
             for move in avail_moves:
                 x, y = move[:]
-                val = self.calc_matrix_val(x, y, Player.PLAYER, matrix)
+                val = self.__calc_matrix_val(x, y, Player.PLAYER, matrix)
                 result_list.append(move, val)
 
             return self.__get_min_pair(result_list)
@@ -114,7 +114,7 @@ class Algorithm():
 
         return pair_list[i]
 
-    def calc_matrix_val(self, x, y, current_player, matrix):
+    def __calc_matrix_val(self, x, y, current_player, matrix):
         flip = self.get_valid_moves(x, y, current_player, matrix)
 
         if len(flip) == 0:
@@ -211,7 +211,6 @@ class Algorithm():
                 if matrix[row][col] != 0:
                     continue
 
-                if self.get_valid_moves(row, col) is not False:
+                if self.get_valid_moves(row, col, player, matrix) is not False:
                     moves.append([row, col])
-
         return moves
