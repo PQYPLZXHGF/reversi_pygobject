@@ -19,7 +19,7 @@ except ImportError:
 import random
 from Reversi.UI.DrawingArea import DrawingArea
 from Reversi.UI.Leaderboard import Leaderboard
-from Reversi.Engine.Game import GameStatus, Player
+from Reversi.Engine.Game import GameStatus, Player, Utilities
 
 
 class Application(Gtk.Window):
@@ -108,7 +108,7 @@ class Application(Gtk.Window):
         lbl_showmove.set_label('Show debug log')
 
         self.lbl_time_count = Gtk.Label(halign=Gtk.Align.END)
-        self.lbl_time_count.set_label(repr(self.timer))
+        self.lbl_time_count.set_label(Utilities().convert_time(self.timer))
 
         self.lbl_turn_count = Gtk.Label(halign=Gtk.Align.END)
         self.lbl_turn_count.set_label(repr(self.turn))
@@ -260,7 +260,7 @@ class Application(Gtk.Window):
     def do_start_game(self):
         self.__init_newgame()
         self.screen.queue_draw()
-        self.current_player = Player().get_player()
+        self.current_player = Utilities().get_player()
         self.game_state = GameStatus.PLAYING
         self.run_time_counter()
 
@@ -273,6 +273,9 @@ class Application(Gtk.Window):
 
         self.update_turn_label()
         self.update_score_label()
+
+        self.screen.is_paused = False
+        self.screen.queue_draw()
 
     def do_pause_game(self):
         self.game_state = GameStatus.PAUSED
@@ -304,13 +307,16 @@ class Application(Gtk.Window):
 
     def do_stop_game(self):
         self.game_state = GameStatus.STOPPED
-        self.stop_time_counter()
+        # self.stop_time_counter()
         self.btn_start.set_label("Start Over")
         self.btn_hiscore.set_label("High Scores")
         self.btn_quit.set_label("Quit")
 
         self.btn_start.set_sensitive(True)
         self.btn_quit.set_sensitive(True)
+
+        self.screen.is_paused = False
+        self.screen.queue_draw()
 
     def on_button_start_clicked(self, button):
         """Handle Start/Restart button
@@ -340,7 +346,7 @@ class Application(Gtk.Window):
             response = dialog.run()
 
             if response == Gtk.ResponseType.OK:
-                self.stop_time_counter()
+                # self.stop_time_counter()
                 self.do_start_game()
                 self.print_debug(
                     "\n===========================================")
@@ -710,7 +716,7 @@ class Application(Gtk.Window):
 
         """
         self.timer += 1
-        self.lbl_time_count.set_label(GameStatus().convert_time(self.timer))
+        self.lbl_time_count.set_label(Utilities().convert_time(self.timer))
 
         return True
 
