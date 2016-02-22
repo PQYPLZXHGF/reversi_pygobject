@@ -220,4 +220,5 @@ class DrawingArea(Gtk.DrawingArea):
 
     player_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
     computer_color = {'r': 1, 'g': 1, 'b': 1, 'a': 1}  # White
-    hint_color = {'r': 1, 'g': 1, 'b': 1, 'a': 0.3}
+    hint_color = {'r': player_color['r'], 'g': player_color['r'],
+                  'b': player_color['b'], 'a': player_color['a'] / 2}
