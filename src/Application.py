@@ -16,7 +16,6 @@ try:
 except ImportError:
     raise('Cannot import "GLib" framework')
 
-import random
 from Reversi.UI.DrawingArea import DrawingArea
 from Reversi.UI.Leaderboard import Leaderboard
 from Reversi.Engine.Game import GameStatus, Player, Utilities
@@ -255,8 +254,6 @@ class Application(Gtk.Window):
         self.matrix[3][3] = Player.COMPUTER
         self.matrix[4][4] = Player.COMPUTER
 
-        self.current_player = random.randint(1, 2)
-
     def do_start_game(self):
         self.__init_newgame()
         self.screen.queue_draw()
@@ -393,7 +390,7 @@ class Application(Gtk.Window):
             # Create surrender confirmation dialog
             self.do_pause_game()
             dialog = Gtk.MessageDialog(parent=self)
-            dialog.set_markup("<b><big>Do you want to surrender?</big></b>")
+            dialog.set_markup("<b><big>Do you want to Surrender?</big></b>")
             dialog.format_secondary_text("Why so soon? Just a lil' more!")
             dialog.set_properties('buttons', Gtk.ButtonsType.NONE)
             dialog.set_properties('message-type', Gtk.MessageType.QUESTION)
@@ -570,6 +567,10 @@ class Application(Gtk.Window):
         :returns: List of valid moves for current turn and its tiles to flip
 
         """
+
+        if self.matrix[x][y] != 0 or not self.is_on_matrix(x, y):
+            return False
+
         tile = self.current_player
 
         if tile == Player.PLAYER:

@@ -26,6 +26,7 @@ class DrawingArea(Gtk.DrawingArea):
 
     """
     Custom widget to act as playing screen
+
     """
 
     def __init__(self, matrix, *args):
@@ -187,15 +188,18 @@ class DrawingArea(Gtk.DrawingArea):
         :computer_color: color in format {'r': val, 'g': val, 'b': val,
                         'a': val} where val is a float in a number from 0 to 1
         :returns: none
+
         """
         self.player_color = player_color
         self.computer_color = computer_color
 
     def __draw_matrix(self, matrix, ctx):
         """
-        Draw the screen based on matrix
+        Draw the pieces on the screen based on matrix
+
         :matrix: matrix of 8x8
         :returns: none
+
         """
 
         for row in range(8):
@@ -204,6 +208,8 @@ class DrawingArea(Gtk.DrawingArea):
                     self.draw_piece(ctx, row, col, self.player_color, True)
                 elif matrix[row][col] == 2:
                     self.draw_piece(ctx, row, col, self.computer_color, True)
+                elif matrix[row][col] == -1:
+                    self.draw_piece(ctx, row, col, self.hint_color, False)
                 else:
                     self.draw_piece(ctx, row, col, self.bg_color)
 
