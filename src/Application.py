@@ -19,6 +19,7 @@ except ImportError:
 from Reversi.UI.DrawingArea import DrawingArea
 from Reversi.UI.Leaderboard import Leaderboard
 from Reversi.Engine.Game import GameStatus, Player, Utilities
+from Reversi.Engine.AI import Algorithm
 
 
 class Application(Gtk.Window):
@@ -466,7 +467,9 @@ class Application(Gtk.Window):
         if not (self.pre_x == row and self.pre_y == col):
             return
 
-        flip_stack = self.is_valid_move(row, col)
+        flip_stack = Algorithm().get_valid_moves(row, col,
+                                                 self.current_player,
+                                                 self.matrix)
         self.print_debug("")
         self.print_debug("Turn:", self.turn, "Player:", self.current_player)
         self.print_debug("Time:", self.timer)
@@ -516,11 +519,9 @@ class Application(Gtk.Window):
         :returns: none
         """
         if switch.get_active():
-            state = "on"
+            pass
         else:
-            state = "off"
-
-        print("Switch \"Show hint\" was turned", state)
+            pass
 
     def on_switch_show_debug_activated(self, switch, *args):
         """Show Debug
@@ -531,33 +532,12 @@ class Application(Gtk.Window):
         """
         if switch.get_active():
             self.debug = True
-            print("\n'Debug turned on")
+            print("\nDebug turned on")
             print("---------------\n")
         else:
             self.debug = False
             print("\nDebug turned off")
             print("----------------\n")
-
-    def is_valid_move(self, x, y):
-        """Check if the movement in current position is a valid move
-
-        :x: matrix row
-        :y: matrix column
-        :returns: True if is a valid move, false otherwise
-
-        """
-        if self.matrix[x][y] != 0:
-            return False
-
-        if not self.is_on_matrix(x, y):
-            return False
-
-        valid_moves = self.get_valid_moves(x, y)
-
-        if valid_moves is False:
-            return False
-
-        return valid_moves
 
     def get_valid_moves(self, x, y):
         """Get a list of valid moves for the current position
@@ -615,8 +595,6 @@ class Application(Gtk.Window):
 
                         flip.append([x_start, y_start])
 
-        # self.matrix[x][y] = 0
-
         if len(flip) == 0:
             return False
 
@@ -645,18 +623,6 @@ class Application(Gtk.Window):
                 break
 
         return row, col
-
-    def is_on_matrix(self, x, y):
-        """
-        Check if current position is on matrix
-
-        :x: matrix column
-        :y: matrix row
-        """
-        if x < 0 or y < 0 or x > 7 or y > 7:
-            return False
-
-        return True
 
     def player_switch(self):
         if self.current_player == Player.PLAYER:
