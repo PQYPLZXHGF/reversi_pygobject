@@ -582,7 +582,7 @@ class Application(Gtk.Window):
         avail_moves = Algorithm().get_available_moves(self.matrix,
                                                       Player.COMPUTER)
         self.print_debug("AI avail moves:", avail_moves[:])
-        pair = Algorithm().get_max_algorithm(1, 1,
+        pair = Algorithm().get_max_algorithm(self.scan_depth, 1,
                                              self.matrix, avail_moves)
         self.make_move(pair[0])
         self.player_switch()
@@ -691,7 +691,7 @@ class Application(Gtk.Window):
     game_state = GameStatus.NONE
     current_player = Player.NONE
 
-    scan_depth = 5
+    scan_depth = 1
 
     pre_x = None
     pre_y = None

@@ -19,28 +19,25 @@ class Algorithm():
         :returns: int
 
         """
-        avail_moves = avail_moves[0]
-
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves[:]:
-                x, y = move[:]
-                val = self.__calc_matrix_val(x, y, Player.COMPUTER, matrix)
+            for move in avail_moves[0][:]:
+                val = self.__calc_matrix_val(move, Player.COMPUTER, matrix)
                 result_list.append([move, val])
 
             return self.__get_max_pair(result_list)
 
         result_list = []
 
-        for move in avail_moves[:]:
+        for move in avail_moves[0][:]:
             matrix_new = deepcopy(matrix)
             self.make_move(Player.COMPUTER, move, matrix_new)
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.PLAYER)
             min_pair = self.get_min_algorithm(max_depth, depth + 1,
                                               matrix_new, avail_moves_new)
-            result_list.append(min_pair)
+            result_list.append([move, min_pair[1]])
 
         return self.__get_max_pair(result_list)
 
@@ -54,28 +51,25 @@ class Algorithm():
         :returns: int
 
         """
-        avail_moves = avail_moves[0]
-
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves[:]:
-                x, y = move[:]
-                val = self.__calc_matrix_val(x, y, Player.PLAYER, matrix)
+            for move in avail_moves[0][:]:
+                val = self.__calc_matrix_val(move, Player.PLAYER, matrix)
                 result_list.append([move, val])
 
             return self.__get_min_pair(result_list)
 
         result_list = []
 
-        for move in avail_moves[:]:
+        for move in avail_moves[0][:]:
             matrix_new = deepcopy(matrix)
             self.make_move(Player.PLAYER, move, matrix_new)
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.COMPUTER)
             max_pair = self.get_max_algorithm(max_depth, depth + 1,
                                               matrix_new, avail_moves_new)
-            result_list.append(max_pair)
+            result_list.append([move, max_pair[1]])
 
         return self.__get_min_pair(result_list)
 
@@ -117,7 +111,8 @@ class Algorithm():
 
         return pair_list[i_min]
 
-    def __calc_matrix_val(self, x, y, current_player, matrix):
+    def __calc_matrix_val(self, move, current_player, matrix):
+        x, y = move[:]
         flip = self.get_valid_moves(x, y, current_player, matrix)
 
         if len(flip) == 0:
