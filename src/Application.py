@@ -329,6 +329,9 @@ class Application(Gtk.Window):
             self.print_debug("Game started. Player", self.current_player,
                              "takes the first turn")
             self.print_debug("===========================================\n")
+
+            if self.current_player == Player.COMPUTER:
+                self.make_move_AI()
         else:
             self.do_pause_game()
             dialog = Gtk.MessageDialog(parent=self)
@@ -455,7 +458,8 @@ class Application(Gtk.Window):
 
         """
         # Block movement on certains game status
-        if self.game_state != GameStatus.PLAYING:
+        if self.game_state != GameStatus.PLAYING \
+                or self.current_player != Player.PLAYER:
             return True
 
         row, col = self.get_position_in_matrix(int(event.x), int(event.y))
@@ -465,49 +469,18 @@ class Application(Gtk.Window):
         same cell. If not, ignore move.
         """
         if not (self.pre_x == row and self.pre_y == col):
-            return
-
-        flip_stack = Algorithm().get_valid_moves(row, col,
-                                                 self.current_player,
-                                                 self.matrix)
-        self.print_debug("")
-        self.print_debug("Turn:", self.turn, "Player:", self.current_player)
-        self.print_debug("Time:", self.timer)
-        self.print_debug("Mouse:", row, col)
-        self.print_debug("Valid movement:", flip_stack is not False)
-
-        if flip_stack is False:
-            self.print_debug("None flip trace found.")
             return True
 
-        for i in range(len(flip_stack)):
-            x, y = flip_stack[i][:]
-            self.matrix[x][y] = self.current_player
+        self.print_debug("Available moves:", Algorithm().get_available_moves(
+            self.matrix, Player.PLAYER
+        ))
 
-        self.matrix[row][col] = self.current_player
-        widget.queue_draw()
+        result = self.make_move([row, col])
 
-        for i in range(len(flip_stack)):
-            x, y = flip_stack[i][:]
-            self.matrix[x][y] = self.current_player
+        # Move not made
+        if result is False:
+            return True
 
-        if self.current_player == Player.PLAYER:
-            self.player_score += (len(flip_stack) + 1)
-            self.computer_score -= len(flip_stack)
-        else:
-            self.computer_score += (len(flip_stack) + 1)
-            self.player_score -= len(flip_stack)
-
-        self.turn += 1
-
-        self.print_debug("Score:", "Player", self.player_score,
-                         "Computer", self.computer_score)
-        self.print_debug("Flip trace:", flip_stack[:])
-        self.print_debug("Matrix:")
-        self.print_matrix()
-
-        self.update_turn_label()
-        self.update_score_label()
         self.player_switch()
         return True
 
@@ -563,16 +536,67 @@ class Application(Gtk.Window):
 
         return row, col
 
-    def player_switch(self):
+    def make_move(self, position):
+        """TODO: Make move at the given position to given player
+
+        :player: current player
+        :position: list of [x, y]
+        :screen: screen to draw
+        :returns: True if move made
+
+        """
+        # Make the actual move and get the result
+        score = Algorithm().make_move(self.current_player, position,
+                                      self.matrix)
+
+        # Redraw screen
+        self.screen.queue_draw()
+
+        self.print_debug("")
+        self.print_debug("Turn:", self.turn, "Player:", self.current_player)
+        self.print_debug("Time:", self.timer)
+        self.print_debug("Current move:", position[:])
+        self.print_debug("Valid movement:", score is not False)
+
+        if score is False:  # Invalid move
+            self.print_debug("None flip trace found")
+            return False
+
+        # Update score label
+        if self.current_player == Player.PLAYER:
+            self.player_score += (score + 1)
+            self.computer_score -= score
+        else:
+            self.computer_score += (score + 1)
+            self.player_score -= score
+
+        self.print_debug("Matrix:")
+        self.print_matrix()
+
+        # Move to next turn
+        self.turn += 1
+        self.update_turn_label()
+        self.update_score_label()
+
+    def make_move_AI(self):
+        avail_moves = Algorithm().get_available_moves(self.matrix,
+                                                      Player.COMPUTER)
+        self.print_debug("AI avail moves:", avail_moves[:])
+        pair = Algorithm().get_max_algorithm(1, 1,
+                                             self.matrix, avail_moves)
+        self.make_move(pair[0])
+        self.player_switch()
+
+    def player_switch(self):  # TODO recheck logic
         if self.current_player == Player.PLAYER:
             self.current_player = Player.COMPUTER
         elif self.current_player == Player.COMPUTER:
             self.current_player = Player.PLAYER
 
-        if len(
-            Algorithm().get_available_moves(self.matrix,
-                                            self.current_player)
-        ) == 0:
+        # Check if there's any valid moves for next player
+        moves = Algorithm().get_available_moves(self.matrix,
+                                                self.current_player)
+        if len(moves) == 0:
             self.stop_time_counter()
             self.do_stop_game()
 
@@ -586,10 +610,16 @@ class Application(Gtk.Window):
                 self.print_debug("\nNot always luck is by your side...")
                 self.print_debug("------------------------------------")
                 self.print_debug("AI got over you by",
-                                 self.computer_label - self.player_score,
+                                 self.computer_score - self.player_score,
                                  "points")
 
             # TODO add player to leaderboard
+
+        # If there's any valid moves for computer and the game still continues,
+        # let it make the way
+        if self.current_player == Player.COMPUTER \
+                and self.game_state == GameStatus.PLAYING:
+            self.make_move_AI()
 
     def print_matrix(self):
         """Print the current matrix
@@ -660,6 +690,8 @@ class Application(Gtk.Window):
     computer_score = 2
     game_state = GameStatus.NONE
     current_player = Player.NONE
+
+    scan_depth = 5
 
     pre_x = None
     pre_y = None

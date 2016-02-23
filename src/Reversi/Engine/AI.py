@@ -19,22 +19,23 @@ class Algorithm():
         :returns: int
 
         """
+        avail_moves = avail_moves[0]
+
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves:
+            for move in avail_moves[:]:
                 x, y = move[:]
                 val = self.__calc_matrix_val(x, y, Player.COMPUTER, matrix)
-                result_list.append(move, val)
+                result_list.append([move, val])
 
             return self.__get_max_pair(result_list)
 
         result_list = []
 
-        for move in avail_moves:
-            x, y = move[:]
+        for move in avail_moves[:]:
             matrix_new = deepcopy(matrix)
-            matrix_new[x][y] = Player.COMPUTER
+            self.make_move(Player.COMPUTER, move, matrix_new)
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.PLAYER)
             min_pair = self.get_min_algorithm(max_depth, depth + 1,
@@ -53,21 +54,23 @@ class Algorithm():
         :returns: int
 
         """
+        avail_moves = avail_moves[0]
+
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves:
+            for move in avail_moves[:]:
                 x, y = move[:]
                 val = self.__calc_matrix_val(x, y, Player.PLAYER, matrix)
-                result_list.append(move, val)
+                result_list.append([move, val])
 
             return self.__get_min_pair(result_list)
 
         result_list = []
 
-        for move in avail_moves:
-            x, y = move[:]
+        for move in avail_moves[:]:
             matrix_new = deepcopy(matrix)
+            self.make_move(Player.PLAYER, move, matrix_new)
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.COMPUTER)
             max_pair = self.get_max_algorithm(max_depth, depth + 1,
@@ -76,7 +79,7 @@ class Algorithm():
 
         return self.__get_min_pair(result_list)
 
-    def __get_max_pair(pair_list):
+    def __get_max_pair(self, pair_list):
         """Get pair with highest value
 
         :pair_list: TODO
@@ -93,9 +96,9 @@ class Algorithm():
                 i_max = i
                 val_max = val
 
-        return pair_list[i]
+        return pair_list[i_max]
 
-    def __get_min_pair(pair_list):
+    def __get_min_pair(self, pair_list):
         """Get pair with lowest value
 
         :pair_list: TODO
@@ -112,7 +115,7 @@ class Algorithm():
                 i_min = i
                 val_min = val
 
-        return pair_list[i]
+        return pair_list[i_min]
 
     def __calc_matrix_val(self, x, y, current_player, matrix):
         flip = self.get_valid_moves(x, y, current_player, matrix)
@@ -213,4 +216,31 @@ class Algorithm():
 
                 if self.get_valid_moves(row, col, player, matrix) is not False:
                     moves.append([row, col])
+
         return moves
+
+    def make_move(self, player, position, matrix):
+        """TODO: Make move at the given position to given player
+
+        :player: current player
+        :position: list of [x, y]
+        :screen: screen to draw
+        :returns: none
+
+        """
+        row, col = position[:]
+
+        # Get flip list for current movement
+        flip_stack = self.get_valid_moves(row, col, player, matrix)
+
+        if flip_stack is False:
+            return False
+
+        # Fill the flip list and player moves in matrix
+        for i in range(len(flip_stack)):
+            x, y = flip_stack[i][:]
+            matrix[x][y] = player
+
+        matrix[row][col] = player
+
+        return len(flip_stack)
