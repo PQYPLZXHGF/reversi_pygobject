@@ -16,30 +16,43 @@ class Algorithm():
         :depth: current depth level
         :matrix: matrix to check
         :*avail_moves: available moves for the given matrix
-        :returns: int
+        :returns: [[x, y] val]
 
         """
+        print("==========GET_MAX_ALG==========, DEPTH", depth)
+        print("avail_moves", avail_moves[0][:])
         if depth == max_depth:
             result_list = []
 
             for move in avail_moves[0][:]:
+                print("for move in avail_moves")
                 val = self.__calc_matrix_val(move, Player.COMPUTER, matrix)
+                print("move", move, "val", val)
                 result_list.append([move, val])
+
+            print("result_list", result_list)
 
             return self.__get_max_pair(result_list)
 
         result_list = []
 
         for move in avail_moves[0][:]:
+            print("for move in avail moves")
+            print("move", move, "depth", depth)
             matrix_new = deepcopy(matrix)
             self.make_move(Player.COMPUTER, move, matrix_new)
+            print("matrix_new", matrix[:])
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.PLAYER)
+            print("avail_moves_new", avail_moves_new[:])
             min_pair = self.get_min_algorithm(max_depth, depth + 1,
                                               matrix_new, avail_moves_new)
+            print("min_pair", min_pair[:])
             result_list.append([move, min_pair[1]])
 
-        return self.__get_max_pair(result_list)
+        print("result_list", result_list[:])
+
+        return self.__get_max_pair(result_list)  # TODO debug
 
     def get_min_algorithm(self, max_depth, depth, matrix, *avail_moves):
         """Get min value of given matrix
@@ -48,7 +61,7 @@ class Algorithm():
         :depth: current depth level
         :matrix: matrix to check
         :*avail_moves: available moves for the given matrix
-        :returns: int
+        :returns: [[x, y], val]
 
         """
         if depth == max_depth:
@@ -76,8 +89,8 @@ class Algorithm():
     def __get_max_pair(self, pair_list):
         """Get pair with highest value
 
-        :pair_list: TODO
-        :returns: TODO
+        :pair_list: list of moves and value in format [[x, y] val]
+        :returns: pair with highest value in format [[x, y] val]
 
         """
         i_max = None
@@ -95,8 +108,8 @@ class Algorithm():
     def __get_min_pair(self, pair_list):
         """Get pair with lowest value
 
-        :pair_list: TODO
-        :returns: TODO
+        :pair_list: list of moves and value in format [[x, y] val]
+        :returns: pair with lowest value in format [[x, y] val]
 
         """
         i_min = None
@@ -112,6 +125,14 @@ class Algorithm():
         return pair_list[i_min]
 
     def __calc_matrix_val(self, move, current_player, matrix):
+        """Calculate the value of given matrix with the given move
+
+        :move: pair of [x, y]
+        :current_player: current player
+        :matrix: matrix
+        :returns: int
+
+        """
         x, y = move[:]
         flip = self.get_valid_moves(x, y, current_player, matrix)
 
@@ -219,7 +240,6 @@ class Algorithm():
 
         :player: current player
         :position: list of [x, y]
-        :screen: screen to draw
         :returns: none
 
         """

@@ -256,6 +256,11 @@ class Application(Gtk.Window):
         self.matrix[4][4] = Player.COMPUTER
 
     def do_start_game(self):
+        """Start the game
+
+        :returns: none
+
+        """
         self.__init_newgame()
         self.screen.queue_draw()
         self.current_player = Utilities().get_player()
@@ -276,6 +281,11 @@ class Application(Gtk.Window):
         self.screen.queue_draw()
 
     def do_pause_game(self):
+        """Send the game to 'paused' status
+
+        :returns: none
+
+        """
         self.game_state = GameStatus.PAUSED
         self.stop_time_counter()
 
@@ -290,6 +300,10 @@ class Application(Gtk.Window):
         self.screen.queue_draw()
 
     def do_resume_game(self):
+        """Resume the game from 'paused' status
+
+        :returns: none
+        """
         self.game_state = GameStatus.PLAYING
         self.run_time_counter()
 
@@ -304,8 +318,12 @@ class Application(Gtk.Window):
         self.screen.queue_draw()
 
     def do_stop_game(self):
+        """Stop game
+
+        :returns: none
+
+        """
         self.game_state = GameStatus.STOPPED
-        # self.stop_time_counter()
         self.btn_start.set_label("Start Over")
         self.btn_hiscore.set_label("High Scores")
         self.btn_quit.set_label("Quit")
@@ -488,7 +506,7 @@ class Application(Gtk.Window):
         """Show hints.
 
         :switch: switch
-        :args: TODO
+        :args: none
         :returns: none
         """
         if switch.get_active():
@@ -500,7 +518,7 @@ class Application(Gtk.Window):
         """Show Debug
 
         :switch: switch
-        :args: TODO
+        :args: none
         :returns: none
         """
         if switch.get_active():
@@ -579,15 +597,26 @@ class Application(Gtk.Window):
         self.update_score_label()
 
     def make_move_AI(self):
+        """Makes move for AI
+
+        :returrns: none
+
+        """
         avail_moves = Algorithm().get_available_moves(self.matrix,
                                                       Player.COMPUTER)
         self.print_debug("AI avail moves:", avail_moves[:])
         pair = Algorithm().get_max_algorithm(self.scan_depth, 1,
                                              self.matrix, avail_moves)
         self.make_move(pair[0])
+
         self.player_switch()
 
-    def player_switch(self):  # TODO recheck logic
+    def player_switch(self):
+        """Switch current player
+
+        :returns: none
+
+        """
         if self.current_player == Player.PLAYER:
             self.current_player = Player.COMPUTER
         elif self.current_player == Player.COMPUTER:
