@@ -9,7 +9,19 @@ class Algorithm():
     def __init__(self):
         pass
 
-    def get_max_algorithm(self, max_depth, depth, matrix, *avail_moves):
+    def do_alpha_beta_pruning(self, max_depth, matrix, avail_moves):
+        """Using alpha-beta pruning algorithm to search for the best move
+        for the computer
+
+        :max_depth: max depth
+        :matrix: matrix
+        :avail_moves: available moves for the current matrix
+        :returns: move in format list [x, y]
+
+        """
+        return self.__get_max_algorithm(max_depth, 1, matrix, avail_moves)
+
+    def __get_max_algorithm(self, max_depth, depth, matrix, avail_moves):
         """Get max value of given matrix
 
         :max_depth: max depth to check
@@ -19,12 +31,17 @@ class Algorithm():
         :returns: [[x, y] val]
 
         """
-        print("==========GET_MAX_ALG==========, DEPTH", depth)
-        print("avail_moves", avail_moves[0][:])
+        print("==========GET_MAX_ALG==========")
+        print("depth", depth)
+        print("avail_moves", avail_moves[:])
+
+        if len(avail_moves) == 0:
+            return False
+
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves[0][:]:
+            for move in avail_moves[:]:
                 print("for move in avail_moves")
                 val = self.__calc_matrix_val(move, Player.COMPUTER, matrix)
                 print("move", move, "val", val)
@@ -32,11 +49,14 @@ class Algorithm():
 
             print("result_list", result_list)
 
-            return self.__get_max_pair(result_list)
+            if len(result_list) == 0:
+                return False
+
+            return self.__get_pair_with_highest_score(result_list)
 
         result_list = []
 
-        for move in avail_moves[0][:]:
+        for move in avail_moves[:]:
             print("for move in avail moves")
             print("move", move, "depth", depth)
             matrix_new = deepcopy(matrix)
@@ -44,17 +64,23 @@ class Algorithm():
             print("matrix_new", matrix[:])
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.PLAYER)
+
+            if len(avail_moves_new) == 0:
+                return False
+
             print("avail_moves_new", avail_moves_new[:])
-            min_pair = self.get_min_algorithm(max_depth, depth + 1,
-                                              matrix_new, avail_moves_new)
+            min_pair = self.__get_min_algorithm(max_depth, depth + 1,
+                                                matrix_new, avail_moves_new)
             print("min_pair", min_pair[:])
-            result_list.append([move, min_pair[1]])
+
+            if min_pair is not False:
+                result_list.append([move, min_pair[1]])
 
         print("result_list", result_list[:])
 
-        return self.__get_max_pair(result_list)  # TODO debug
+        return self.__get_pair_with_highest_score(result_list)  # TODO debug
 
-    def get_min_algorithm(self, max_depth, depth, matrix, *avail_moves):
+    def __get_min_algorithm(self, max_depth, depth, matrix, avail_moves):
         """Get min value of given matrix
 
         :max_depth: max depth to check
@@ -64,29 +90,36 @@ class Algorithm():
         :returns: [[x, y], val]
 
         """
+        if len(avail_moves) == 0:
+            return False
+
         if depth == max_depth:
             result_list = []
 
-            for move in avail_moves[0][:]:
+            for move in avail_moves[:]:
                 val = self.__calc_matrix_val(move, Player.PLAYER, matrix)
                 result_list.append([move, val])
 
-            return self.__get_min_pair(result_list)
+            return self.__get_pair_with_lowest_score(result_list)
 
         result_list = []
 
-        for move in avail_moves[0][:]:
+        for move in avail_moves[:]:
             matrix_new = deepcopy(matrix)
             self.make_move(Player.PLAYER, move, matrix_new)
             avail_moves_new = self.get_available_moves(matrix_new,
                                                        Player.COMPUTER)
-            max_pair = self.get_max_algorithm(max_depth, depth + 1,
-                                              matrix_new, avail_moves_new)
+
+            if len(avail_moves_new) == 0:
+                return False
+
+            max_pair = self.__get_max_algorithm(max_depth, depth + 1,
+                                                matrix_new, avail_moves_new)
             result_list.append([move, max_pair[1]])
 
-        return self.__get_min_pair(result_list)
+        return self.__get_pair_with_lowest_score(result_list)
 
-    def __get_max_pair(self, pair_list):
+    def __get_pair_with_highest_score(self, pair_list):
         """Get pair with highest value
 
         :pair_list: list of moves and value in format [[x, y] val]
@@ -105,7 +138,7 @@ class Algorithm():
 
         return pair_list[i_max]
 
-    def __get_min_pair(self, pair_list):
+    def __get_pair_with_lowest_score(self, pair_list):
         """Get pair with lowest value
 
         :pair_list: list of moves and value in format [[x, y] val]
