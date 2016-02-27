@@ -499,7 +499,7 @@ class Application(Gtk.Window):
         if result is False:
             return True
 
-        self.player_switch()
+        self.do_switch_player()
         return True
 
     def on_switch_hint_activated(self, switch, *args):
@@ -605,42 +605,62 @@ class Application(Gtk.Window):
         avail_moves = Algorithm().get_available_moves(self.matrix,
                                                       Player.COMPUTER)
         self.print_debug("AI avail moves:", avail_moves[:])
-        pair = Algorithm().get_max_algorithm(self.scan_depth, 1,
-                                             self.matrix, avail_moves)
+        pair = Algorithm().do_alpha_beta_pruning(self.scan_depth, self.matrix,
+                                                 avail_moves)
         self.make_move(pair[0])
 
-        self.player_switch()
+        self.do_switch_player()
 
-    def player_switch(self):
+    def do_switch_player(self):
         """Switch current player
 
         :returns: none
 
         """
+        opponent = None
+
         if self.current_player == Player.PLAYER:
-            self.current_player = Player.COMPUTER
+            opponent = Player.COMPUTER
         elif self.current_player == Player.COMPUTER:
-            self.current_player = Player.PLAYER
+            opponent = Player.PLAYER
 
-        # Check if there's any valid moves for next player
-        moves = Algorithm().get_available_moves(self.matrix,
-                                                self.current_player)
-        if len(moves) == 0:
-            self.stop_time_counter()
-            self.do_stop_game()
+        # Check if there's any available moves for the opponent
+        if len(Algorithm().get_available_moves(self.matrix, opponent)) == 0:
 
-            if self.player_score > self.computer_score:
-                self.print_debug("\nCongratulation!")
-                self.print_debug("---------------")
-                self.print_debug("You beat AI for",
-                                 self.player_score - self.computer_score,
-                                 "points")
-            elif self.player_score < self.computer_score:
-                self.print_debug("\nNot always luck is by your side...")
-                self.print_debug("------------------------------------")
-                self.print_debug("AI got over you by",
-                                 self.computer_score - self.player_score,
-                                 "points")
+            # Check if both players have no moves
+            if len(Algorithm().get_available_moves(
+                self.matrix, self.current_player
+            )) == 0:
+                self.stop_time_counter()
+                self.do_stop_game()
+
+                if self.player_score > self.computer_score:
+                    self.print_debug("\nCongratulation!")
+                    self.print_debug("---------------")
+                    self.print_debug("You beat AI for",
+                                     self.player_score - self.computer_score,
+                                     "points")
+                elif self.player_score < self.computer_score:
+                    self.print_debug("\nNot always luck is by your side...")
+                    self.print_debug("------------------------------------")
+                    self.print_debug("AI got over you by",
+                                     self.computer_score - self.player_score,
+                                     "points")
+                else:
+                    self.print_debug("\nI'm actually impresed!")
+                    self.print_debug("----------------------")
+                    self.print_debug("Draw! Same scores for each:",
+                                     self.player_score, "-",
+                                     self.computer_score)
+            else:
+                if self.current_player == Player.PLAYER:
+                    self.print_debug("\nAI has no moves, get the chance!\n")
+                else:
+                    self.print_debug("\nToo bad, you have no moves."
+                                     "One extra move for AI!")
+
+        else:
+            self.current_player = opponent
 
             # TODO add player to leaderboard
 
