@@ -1,36 +1,28 @@
 #!/usr/bin/env python3
 
-try:
-    import gi
-    gi.require_version('Gtk', '3.0')
-except ImportError:
-    raise('Cannot import "gi" repository')
+import gi
+gi.require_version('Gtk', '3.0')
 
-try:
-    from gi.repository import Gtk
-except ImportError:
-    raise('Cannot import "Gtk" framework')
+from gi.repository import Gtk, GLib
 
-try:
-    from gi.repository import GLib
-except ImportError:
-    raise('Cannot import "GLib" framework')
-
-from Reversi.UI.DrawingArea import DrawingArea
-from Reversi.UI.Leaderboard import Leaderboard
-from Reversi.Engine.Game import GameStatus, Player, Utilities
-from Reversi.Engine.AI import Algorithm
+from reversi.algorithm import Algorithm
+from reversi.drawingarea import DrawingArea
+from reversi.game import Game, GameStatus, Player, Utilities
+from reversi.panel import Panel
+from reversi.leaderboard import Leaderboard
 
 
 class Application(Gtk.Window):
 
     """
     Main window of game.
+
     """
 
     def __init__(self):
         """
         Initialize Application Window
+
         """
         Gtk.Window.__init__(self)
 
@@ -52,8 +44,8 @@ class Application(Gtk.Window):
         self.set_titlebar(header)
 
         # Create main container
-        self.hcontainer = Gtk.HBox(spacing=10)
-        self.add(self.hcontainer)
+        hcontainer = Gtk.HBox(spacing=10)
+        self.add(hcontainer)
 
         # Create drawing area
         self.screen = DrawingArea(self.matrix)
@@ -61,174 +53,21 @@ class Application(Gtk.Window):
                             self.on_mouse_pressed_drawingarea)
         self.screen.connect('button-release-event',
                             self.on_mouse_released_drawingarea)
-        self.hcontainer.pack_start(self.screen, True, True, 0)
+        hcontainer.pack_start(self.screen, True, True, 0)
 
         # Create right panel
-        vbox_panel = Gtk.VBox()
-        self.__init_panel(vbox_panel)
-        self.hcontainer.pack_end(vbox_panel, False, False, 0)
+        self.panel = Panel()
+        hcontainer.pack_end(self.panel, False, False, 0)
+
+        self.panel.btn_start.connect('clicked',
+                                     self.on_button_start_clicked)
+        self.panel.btn_hiscore.connect('clicked',
+                                       self.on_button_hiscore_clicked)
+        self.panel.btn_quit.connect('clicked',
+                                    self.on_button_quit_clicked)
 
         # Display Application Window
         self.show_all()
-
-    def __init_panel(self, widget):
-        """Initialize right panel and connect it to events
-
-        :widget: container
-        :returns: none
-
-        """
-        # Create panel labels
-
-        lbl_information = Gtk.Label()
-        lbl_information.set_markup("<b>Information</b>")
-
-        lbl_score = Gtk.Label()
-        lbl_score.set_markup("<b>Score</b>")
-
-        lbl_setting = Gtk.Label()
-        lbl_setting.set_markup('<b>Setting</b>')
-
-        lbl_time = Gtk.Label(halign=Gtk.Align.START)
-        lbl_time.set_label("Time")
-
-        lbl_turn = Gtk.Label(halign=Gtk.Align.START)
-        lbl_turn.set_label("Turn")
-
-        lbl_score_player = Gtk.Label(halign=Gtk.Align.START)
-        lbl_score_player.set_label(self.player_label)
-
-        lbl_score_computer = Gtk.Label(halign=Gtk.Align.START)
-        lbl_score_computer.set_label(self.computer_label)
-
-        lbl_showhint = Gtk.Label(halign=Gtk.Align.START)
-        lbl_showhint.set_label('Show hint')
-
-        lbl_showmove = Gtk.Label(halign=Gtk.Align.START)
-        lbl_showmove.set_label('Show debug log')
-
-        self.lbl_time_count = Gtk.Label(halign=Gtk.Align.END)
-        self.lbl_time_count.set_label(Utilities().convert_time(self.timer))
-
-        self.lbl_turn_count = Gtk.Label(halign=Gtk.Align.END)
-        self.lbl_turn_count.set_label(repr(self.turn))
-
-        self.lbl_score_player_count = Gtk.Label(halign=Gtk.Align.END)
-        self.lbl_score_player_count.set_label(repr(self.player_score))
-
-        self.lbl_score_computer_count = Gtk.Label(halign=Gtk.Align.END)
-        self.lbl_score_computer_count.set_label(repr(self.computer_score))
-
-        # Create buttons
-        self.btn_start = Gtk.Button()
-        self.btn_start.set_label("Start Game")
-        self.btn_start.set_size_request(-1, 50)
-        self.btn_start.connect('clicked', self.on_button_start_clicked)
-
-        self.btn_hiscore = Gtk.Button()
-        self.btn_hiscore.set_label("High Scores")
-        self.btn_hiscore.set_size_request(-1, 50)
-        self.btn_hiscore.connect('clicked', self.on_button_hiscore_clicked)
-
-        self.btn_quit = Gtk.Button()
-        self.btn_quit.set_size_request(-1, 50)
-        self.btn_quit.set_label("Quit")
-        self.btn_quit.connect('clicked', self.on_button_quit_clicked)
-
-        self.switch_hint = Gtk.Switch(valign=Gtk.Align.END)
-        self.switch_hint.connect('notify::active',
-                                 self.on_switch_hint_activated)
-
-        self.switch_show_debug = Gtk.Switch(valign=Gtk.Align.END)
-        self.switch_show_debug.set_active(self.debug)
-        self.switch_show_debug.connect('notify::active',
-                                       self.on_switch_show_debug_activated)
-
-        # Right panel listbox
-        panel_listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
-        widget.add(panel_listbox)
-
-        # Sysinfo Label
-        row = Gtk.ListBoxRow()
-        row.add(lbl_information)
-        panel_listbox.add(row)
-
-        # Timer row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.pack_start(lbl_time, True, True, 0)
-        hbox.pack_start(self.lbl_time_count, True, True, 0)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Turn row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.add(lbl_turn)
-        hbox.add(self.lbl_turn_count)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Blank Row
-        row = Gtk.ListBoxRow()
-        lbl_blank = Gtk.Label()
-        lbl_blank.set_label("")
-        row.add(lbl_blank)
-        panel_listbox.add(row)
-
-        # Score Row
-        row = Gtk.ListBoxRow()
-        row.add(lbl_score)
-        panel_listbox.add(row)
-
-        # Player's score row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.add(lbl_score_player)
-        hbox.add(self.lbl_score_player_count)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Computer's score row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.add(lbl_score_computer)
-        hbox.add(self.lbl_score_computer_count)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Blank row
-        row = Gtk.ListBoxRow()
-        lbl_blank = Gtk.Label()
-        lbl_blank.set_label("")
-        row.add(lbl_blank)
-        panel_listbox.add(row)
-
-        # Setting row
-        row = Gtk.ListBoxRow()
-        row.add(lbl_setting)
-        panel_listbox.add(row)
-
-        # Show hints row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.pack_start(lbl_showhint, True, True, 0)
-        hbox.pack_start(self.switch_hint, False, True, 0)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Show hints row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.pack_start(lbl_showmove, True, True, 0)
-        hbox.pack_start(self.switch_show_debug, False, True, 0)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Add buttons to the bottom
-        widget.pack_end(self.btn_quit, False, True, 0)
-        widget.pack_end(self.btn_hiscore, False, True, 0)
-        widget.pack_end(self.btn_start, False, True, 0)
 
     def __init_newgame(self):
         """Initialize new game
@@ -237,8 +76,6 @@ class Application(Gtk.Window):
 
         """
         self.game_state = GameStatus.NONE
-        self.timer = 0
-        self.turn = 0
         self.current_player = Player.NONE
         self.player_score = 2
         self.computer_score = 2
@@ -255,7 +92,7 @@ class Application(Gtk.Window):
         self.matrix[3][3] = Player.COMPUTER
         self.matrix[4][4] = Player.COMPUTER
 
-    def do_start_game(self):
+    def start_game(self):
         """Start the game
 
         :returns: none
@@ -265,71 +102,74 @@ class Application(Gtk.Window):
         self.screen.queue_draw()
         self.current_player = Utilities().get_player()
         self.game_state = GameStatus.PLAYING
-        self.run_time_counter()
+        self.panel.run_time_counter()
 
-        self.btn_start.set_label("Restart")
-        self.btn_hiscore.set_label("Pause")
-        self.btn_quit.set_label("Surrender")
+        self.panel.btn_start.set_label("Restart")
+        self.panel.btn_hiscore.set_label("Pause")
+        self.panel.btn_quit.set_label("Surrender")
 
-        self.btn_start.set_sensitive(True)
-        self.btn_quit.set_sensitive(True)
+        self.panel.btn_start.set_sensitive(True)
+        self.panel.btn_quit.set_sensitive(True)
 
-        self.update_turn_label()
-        self.update_score_label()
+        self.panel.set_turn(self.turn)
+        self.panel.set_score(self.player_score, self.computer_score)
 
         self.screen.is_paused = False
-        self.screen.queue_draw()
+        # self.screen.queue_draw()
 
-    def do_pause_game(self):
+        if self.current_player == Player.COMPUTER:
+            self.make_move_AI()
+
+    def pause_game(self):
         """Send the game to 'paused' status
 
         :returns: none
 
         """
         self.game_state = GameStatus.PAUSED
-        self.stop_time_counter()
+        self.panel.stop_time_counter()
 
-        self.btn_start.set_label("Restart")
-        self.btn_hiscore.set_label("Resume")
-        self.btn_quit.set_label("Surrender")
+        self.panel.btn_start.set_label("Restart")
+        self.panel.btn_hiscore.set_label("Resume")
+        self.panel.btn_quit.set_label("Surrender")
 
-        self.btn_start.set_sensitive(False)
-        self.btn_quit.set_sensitive(False)
+        self.panel.btn_start.set_sensitive(False)
+        self.panel.btn_quit.set_sensitive(False)
 
         self.screen.is_paused = True
         self.screen.queue_draw()
 
-    def do_resume_game(self):
+    def resume_game(self):
         """Resume the game from 'paused' status
 
         :returns: none
         """
         self.game_state = GameStatus.PLAYING
-        self.run_time_counter()
+        self.panel.run_time_counter()
 
-        self.btn_start.set_label("Restart")
-        self.btn_hiscore.set_label("Pause")
-        self.btn_quit.set_label("Surrender")
+        self.panel.btn_start.set_label("Restart")
+        self.panel.btn_hiscore.set_label("Pause")
+        self.panel.btn_quit.set_label("Surrender")
 
-        self.btn_start.set_sensitive(True)
-        self.btn_quit.set_sensitive(True)
+        self.panel.btn_start.set_sensitive(True)
+        self.panel.btn_quit.set_sensitive(True)
 
         self.screen.is_paused = False
         self.screen.queue_draw()
 
-    def do_stop_game(self):
+    def stop_game(self):
         """Stop game
 
         :returns: none
 
         """
         self.game_state = GameStatus.STOPPED
-        self.btn_start.set_label("Start Over")
-        self.btn_hiscore.set_label("High Scores")
-        self.btn_quit.set_label("Quit")
+        self.panel.btn_start.set_label("Start Over")
+        self.panel.btn_hiscore.set_label("High Scores")
+        self.panel.btn_quit.set_label("Quit")
 
-        self.btn_start.set_sensitive(True)
-        self.btn_quit.set_sensitive(True)
+        self.panel.btn_start.set_sensitive(True)
+        self.panel.btn_quit.set_sensitive(True)
 
         self.screen.is_paused = False
         self.screen.queue_draw()
@@ -342,16 +182,9 @@ class Application(Gtk.Window):
         """
         if self.game_state == GameStatus.NONE \
                 or self.game_state == GameStatus.STOPPED:
-            self.do_start_game()
-            self.print_debug("\n===========================================")
-            self.print_debug("Game started. Player", self.current_player,
-                             "takes the first turn")
-            self.print_debug("===========================================\n")
-
-            if self.current_player == Player.COMPUTER:
-                self.make_move_AI()
+            self.start_game()
         else:
-            self.do_pause_game()
+            self.pause_game()
             dialog = Gtk.MessageDialog(parent=self)
             dialog.set_markup("<b><big>Do you want to Restart?</big></b>")
             dialog.format_secondary_text("Note that all of your progress "
@@ -366,15 +199,9 @@ class Application(Gtk.Window):
 
             if response == Gtk.ResponseType.OK:
                 # self.stop_time_counter()
-                self.do_start_game()
-                self.print_debug(
-                    "\n===========================================")
-                self.print_debug("Game started. Player", self.current_player,
-                                 "takes the first turn")
-                self.print_debug(
-                    "===========================================\n")
+                self.start_game()
             else:
-                self.do_resume_game()
+                self.resume_game()
 
             dialog.destroy()
 
@@ -389,15 +216,12 @@ class Application(Gtk.Window):
 
         """
         if self.game_state == GameStatus.PLAYING:
-            self.do_pause_game()
-            self.print_debug("\nGame paused")
-            self.print_debug("-----------")
+            self.pause_game()
         elif self.game_state == GameStatus.PAUSED:
-            self.do_resume_game()
-            self.print_debug("\nGame resumed")
-            self.print_debug("------------")
+            self.resume_game()
         else:
             leaderboard = Leaderboard()
+            # TODO implement leaderboard
             leaderboard.show_all()
 
     def on_button_quit_clicked(self, button, *args):
@@ -410,7 +234,7 @@ class Application(Gtk.Window):
         if self.game_state == GameStatus.PLAYING \
                 or self.game_state == GameStatus.PAUSED:
             # Create surrender confirmation dialog
-            self.do_pause_game()
+            self.pause_game()
             dialog = Gtk.MessageDialog(parent=self)
             dialog.set_markup("<b><big>Do you want to Surrender?</big></b>")
             dialog.format_secondary_text("Why so soon? Just a lil' more!")
@@ -423,11 +247,9 @@ class Application(Gtk.Window):
             response = dialog.run()
 
             if response == Gtk.ResponseType.OK:
-                self.do_stop_game()
-                self.print_debug("\nYou're weak...")
-                self.print_debug("--------------")
+                self.stop_game()
             else:
-                self.do_resume_game()
+                self.resume_game()
 
             dialog.destroy()
         else:
@@ -459,6 +281,7 @@ class Application(Gtk.Window):
         :return: none
 
         """
+        # Ignore if
         if self.game_state == GameStatus.NONE:
             return True
 
@@ -489,17 +312,16 @@ class Application(Gtk.Window):
         if not (self.pre_x == row and self.pre_y == col):
             return True
 
-        self.print_debug("Available moves:", Algorithm().get_available_moves(
-            self.matrix, Player.PLAYER
-        ))
-
         result = self.make_move([row, col])
 
         # Move not made
         if result is False:
             return True
 
-        self.do_switch_player()
+        # Change player
+        self.switch_player()
+
+        # Destroy the event
         return True
 
     def on_switch_hint_activated(self, switch, *args):
@@ -523,12 +345,8 @@ class Application(Gtk.Window):
         """
         if switch.get_active():
             self.debug = True
-            print("\nDebug turned on")
-            print("---------------\n")
         else:
             self.debug = False
-            print("\nDebug turned off")
-            print("----------------\n")
 
     def get_position_in_matrix(self, position_x, position_y):
         """Determine the current pair of x, y position is in which cell of
@@ -564,20 +382,12 @@ class Application(Gtk.Window):
 
         """
         # Make the actual move and get the result
-        score = Algorithm().make_move(self.current_player, position,
-                                      self.matrix)
+        score = Game.make_move(self.current_player, position, self.matrix)
 
         # Redraw screen
         self.screen.queue_draw()
 
-        self.print_debug("")
-        self.print_debug("Turn:", self.turn, "Player:", self.current_player)
-        self.print_debug("Time:", self.timer)
-        self.print_debug("Current move:", position[:])
-        self.print_debug("Valid movement:", score is not False)
-
         if score is False:  # Invalid move
-            self.print_debug("None flip trace found")
             return False
 
         # Update score label
@@ -588,13 +398,9 @@ class Application(Gtk.Window):
             self.computer_score += (score + 1)
             self.player_score -= score
 
-        self.print_debug("Matrix:")
-        self.print_matrix()
-
         # Move to next turn
-        self.turn += 1
-        self.update_turn_label()
-        self.update_score_label()
+        self.panel.update_turn_label()
+        self.panel.set_score(self.player_score, self.computer_score)
 
     def make_move_AI(self):
         """Makes move for AI
@@ -602,16 +408,15 @@ class Application(Gtk.Window):
         :returrns: none
 
         """
-        avail_moves = Algorithm().get_available_moves(self.matrix,
-                                                      Player.COMPUTER)
-        self.print_debug("AI avail moves:", avail_moves[:])
-        pair = Algorithm().do_alpha_beta_pruning(self.scan_depth, self.matrix,
-                                                 avail_moves)
+        avail_moves = Game.get_available_moves(self.current_player,
+                                               self.matrix)
+        pair = Algorithm().do_minimax(self.depth - 1, self.matrix,
+                                      self.current_player, avail_moves)
         self.make_move(pair[0])
 
-        self.do_switch_player()
+        self.switch_player()
 
-    def do_switch_player(self):
+    def switch_player(self):
         """Switch current player
 
         :returns: none
@@ -625,14 +430,14 @@ class Application(Gtk.Window):
             opponent = Player.PLAYER
 
         # Check if there's any available moves for the opponent
-        if len(Algorithm().get_available_moves(self.matrix, opponent)) == 0:
+        if len(Game.get_available_moves(opponent, self.matrix)) == 0:
 
             # Check if both players have no moves
-            if len(Algorithm().get_available_moves(
-                self.matrix, self.current_player
+            if len(Game.get_available_moves(
+                self.current_player, self.matrix
             )) == 0:
-                self.stop_time_counter()
-                self.do_stop_game()
+                self.panel.stop_time_counter()
+                self.stop_game()
 
                 if self.player_score > self.computer_score:
                     self.print_debug("\nCongratulation!")
@@ -728,8 +533,9 @@ class Application(Gtk.Window):
         return True
 
     def print_debug(self, *msg):
-        if self.debug:
-            print(*msg)
+        #if self.debug:
+        #    print(*msg)
+        pass
 
     timer = 0
     turn = 0
@@ -740,12 +546,9 @@ class Application(Gtk.Window):
     game_state = GameStatus.NONE
     current_player = Player.NONE
 
-    scan_depth = 1
+    depth = 1
 
     pre_x = None
     pre_y = None
     matrix = None
     debug = True
-
-application = Application()
-Gtk.main()

@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
 
-try:
-    import gi
-    gi.require_version('Gtk', '3.0')
-except ImportError:
-    raise('Cannot import "gi" repository')
+import gi
+gi.require_version('Gtk', '3.0')
 
-try:
-    from gi.repository import Gtk
-except ImportError:
-    raise('Cannot import "Gtk" framework')
-
-try:
-    from gi.repository import Gdk
-except ImportError:
-    raise('Cannot import "Gdk" framework')
-
-try:
-    import cairo
-except ImportError:
-    raise('Cannot import "cairo" framework')
+import cairo
+from gi.repository import Gtk, Gdk
 
 
 class DrawingArea(Gtk.DrawingArea):
