@@ -18,11 +18,70 @@ class Player:
     COMPUTER = 2
 
 
+class Field:
+    """Re-define the matrix into fields
+
+    Use "position in Field.NAME" to check if the position is on defined field
+
+    """
+
+    CORNER = [[0, 0], [0, 7], [7, 0], [7, 7]]
+
+    BORDER_ADVANTAGE = [[0, 2], [0, 3], [0, 4], [0, 5],
+                        [2, 0], [3, 0], [4, 0], [5, 0],
+                        [7, 2], [7, 3], [7, 4], [7, 5],
+                        [2, 7], [3, 7], [4, 7], [5, 7]]
+
+    BORDER_DISADVANTAGE = [[0, 1], [0, 6], [1, 0], [1, 7],
+                           [6, 0], [6, 7], [7, 1], [7, 6]]
+
+    INNER_DISADVANTAGE = [[1, 1], [1, 2], [1, 3], [1, 4], [1, 5],
+                          [2, 1], [3, 1], [4, 1], [5, 1], [6, 1],
+                          [6, 2], [6, 3], [6, 4], [6, 5], [6, 6],
+                          [1, 6], [2, 6], [3, 6], [4, 6], [5, 6]]
+
+    INNER_NORMAL = [[2, 2], [2, 3], [2, 4], [2, 5],
+                    [3, 2], [3, 3], [3, 4], [3, 5],
+                    [4, 2], [4, 3], [4, 4], [4, 5],
+                    [5, 2], [5, 3], [5, 4], [5, 5]]
+
+    DIRECTION = [[-1, -1], [-1, 0], [-1, 1],
+                 [0, -1], [0, 1],
+                 [1, -1], [1, 0], [1, 1]]
+
+    # Aliases
+    BORDER = CORNER + BORDER_ADVANTAGE + BORDER_DISADVANTAGE
+    ADVANTAGE = CORNER + BORDER_ADVANTAGE
+    QUESTIONABLE = BORDER_DISADVANTAGE
+    DISADVANTAGE = INNER_DISADVANTAGE + BORDER_DISADVANTAGE
+    NORMAL = INNER_NORMAL
+
+
 class Utilities:
     """
     Contains optional static methods as helpers
 
     """
+
+    @staticmethod
+    def calc_matrix_score(matrix):
+        """Calculate the score of current matrix
+
+        :matrix: matrix
+        :returns: list of score [player, computer]
+
+        """
+        p_score = 0
+        c_score = 0
+
+        for row in range(8):
+            for col in range(8):
+                if matrix[row][col] == 1:
+                    p_score += 1
+                elif matrix[row][col] == 2:
+                    c_score += 1
+
+        return [p_score, c_score]
 
     @staticmethod
     def clone_matrix(matrix):
@@ -43,8 +102,8 @@ class Utilities:
         return random.randint(Player.PLAYER, Player.COMPUTER)
 
     @staticmethod
-    def get_current_time(time_format="%H:%M:%S %d/%m/%Y"):
-        return time.strftime(time_format)
+    def get_current_time(format="%H:%M:%S %d/%m/%Y"):
+        return time.strftime(format)
 
     @staticmethod
     def get_random_number(start, end):
@@ -57,16 +116,53 @@ class Utilities:
 
     @staticmethod
     def sort_position_list(positions):
-        """ Sort input positions to order: advantage > normal > disadvantage
+        """ Sort input positions to order: advantage > disadvantage > normal
 
         :positions: List of positions in format [x, y]
         :returns: Sorted list
 
         """
+        sorted_list = []
 
-        # TODO implement
-        return positions
+        # Add cornered positions
+        for p in positions:
+            if p in Field.CORNER:
+                sorted_list.append(p)
+                positions.remove(p)
 
+        # Add advantage positions
+        for p in positions:
+            if p in Field.BORDER_ADVANTAGE:
+                sorted_list.append(p)
+                positions.remove(p)
+
+        # Add disadvantage positions of borders
+        for p in positions:
+            if p in Field.BORDER_DISADVANTAGE:
+                sorted_list.append(p)
+                positions.remove(p)
+
+        # Add disadvantage positions
+        for p in positions:
+            if p in Field.DISADVANTAGE:
+                sorted_list.append(p)
+                positions.remove(p)
+
+        # Add remains (normals)
+        sorted_list += positions
+
+        return sorted_list
+
+    @staticmethod
+    def calc_value(player, value):
+        """Re-assign the value based on which player is on.
+
+        :player: Player
+        :value: Value of player
+        :returns: Positive number if player is computer, else negative
+
+        """
+        return value if player == Player.COMPUTER else -value
 
 class Game:
     @staticmethod
@@ -118,12 +214,13 @@ class Game:
         will be randomized from the list of highest scores.
 
         :result_list: list of moves in format [[[x1, y1], val1],
-        [[x2, y2], val2], [[x3, y3], val3], ...]
+         [[x2, y2], val2], [[x3, y3], val3], ...]
         :returns: The best move in format [[x, y], val], which have highest
         value or chosen randomly from the list which have the same (highest)
         values.
 
         """
+        """ Deprecated """
         i_max = None
         val_max = None
         list_max = []
@@ -175,40 +272,39 @@ class Game:
         elif tile == Player.COMPUTER:
             other_tile = Player.PLAYER
 
-        for x_direction, y_direction in [[-1, -1], [-1, 0], [-1, 1],
-                                         [0, -1], [0, 1],
-                                         [1, -1], [1, 0], [1, 1]]:
-            x_start, y_start = x, y
-            x_start += x_direction
-            y_start += y_direction
+        # Check for each direction and move forward to find the path
+        for x_direction, y_direction in Field.DIRECTION:
+            x_forward, y_forward = x, y
+            x_forward += x_direction
+            y_forward += y_direction
 
-            if Game.is_on_matrix([x_start, y_start]) \
-                    and matrix[x_start][y_start] == other_tile:
-                x_start += x_direction
-                y_start += y_direction
+            if Game.is_on_matrix([x_forward, y_forward]) \
+                    and matrix[x_forward][y_forward] == other_tile:
+                x_forward += x_direction
+                y_forward += y_direction
 
-                if not Game.is_on_matrix([x_start, y_start]):
+                if not Game.is_on_matrix([x_forward, y_forward]):
                     continue
 
-                while matrix[x_start][y_start] == other_tile:
-                    x_start += x_direction
-                    y_start += y_direction
+                while matrix[x_forward][y_forward] == other_tile:
+                    x_forward += x_direction
+                    y_forward += y_direction
 
-                    if not Game.is_on_matrix([x_start, y_start]):
+                    if not Game.is_on_matrix([x_forward, y_forward]):
                         break
 
-                if not Game.is_on_matrix([x_start, y_start]):
+                if not Game.is_on_matrix([x_forward, y_forward]):
                     continue
 
-                if matrix[x_start][y_start] == tile:
+                if matrix[x_forward][y_forward] == tile:
                     while True:
-                        x_start -= x_direction
-                        y_start -= y_direction
+                        x_forward -= x_direction
+                        y_forward -= y_direction
 
-                        if x_start == x and y_start == y:
+                        if x_forward == x and y_forward == y:
                             break
 
-                        flips.append([x_start, y_start])
+                        flips.append([x_forward, y_forward])
 
         return flips
 
@@ -228,63 +324,6 @@ class Game:
         return True
 
     @staticmethod
-    def is_on_advantage_zone(position):
-        """Check if current position is on "advantage zone"
-        (border minus 8 disadvantage positions)
-
-        :position: Position in format [x, y] to check
-        :returns: True if condition of "advantage zone" satisfied.
-
-        """
-        x, y = position[:]
-
-        # Position is on corner
-        if x == 0 or y == 0 or x == 7 or y == 7:
-            # Check if position is on "disadvantage zone" of corner
-            if isinstance([x, y], [[0, 1], [0, 6], [1, 0], [1, 7],
-                                   [6, 0], [6, 7], [7, 1], [7, 6]]):
-                return False
-
-            # Position is on normal corner zone
-            return True
-
-        # Position is not on corner
-        return False
-
-    @staticmethod
-    def is_on_disadvantage_zone(position):
-        """ Check if current position is on "disadvantage zone"
-        (all positions which is next to borders, including 8 positions next to
-        4 corners)
-
-        :position: Position in format [x, y] to check
-        :returns: True if condition of "disadvantage zone" satisfied
-
-        """
-        x, y = position[:]
-
-        if x == 1 or x == 6 or y == 1 or y == 6:
-            return True
-
-        return False
-
-    @staticmethod
-    def is_on_normal_zone(position):
-        """Check if current position is on "normal zone" (not on any special
-         zones)
-
-         :position: Position in format [x, y] to check
-         :returns: True if none of the special conditions met
-
-        """
-
-        if Game.is_on_advantage_zone(position) or \
-                Game.is_on_disadvantage_zone(position):
-            return False
-
-        return True
-
-    @staticmethod
     def get_nearby_borders(position, matrix):
         """Get nearby available positions which is on border
 
@@ -294,32 +333,25 @@ class Game:
         """
         relatives = []
 
-        for x_direction, y_direction in [[-1, -1], [-1, 0], [-1, 1],
-                                         [0, -1], [0, 1],
-                                         [1, -1], [1, 0], [1, 1]]:
+        for x_direction, y_direction in Field.DIRECTION:
             x, y = position[:]
             x_forward = x + x_direction
             y_forward = y + y_direction
 
-            # TODO recheck condition
-            if ((x_forward == 0 and y_forward in range(8)) or \
-                (x_forward == 7 and y_forward in range(8)) or \
-                (y_forward == 0 and x_forward in range(8)) or \
-                (y_forward == 7 and x_forward in range(8))
-               ) and matrix[x_forward, y_forward] == 0:
+            if Game.is_on_borderline(position) and \
+                    matrix[x_forward, y_forward] == 0:
                 relatives.append([x_forward, y_forward])
 
         return relatives
 
     @staticmethod
     def make_move(player, position, matrix):
-        """Make move at the given position. You should check if the position
-        is valid itself before passing to this method.
+        """Make move at the given position
 
         :player: Player who makes move
         :position: Position [x, y] to make move on
         :matrix: Matrix to make move on, can be virtual one
-        :returns: Length of flipped pieces. False if no moves made (0 flips)
+        :returns: Length of flipped pieces. False if move can't be made.
 
         """
         row, col = position[:]

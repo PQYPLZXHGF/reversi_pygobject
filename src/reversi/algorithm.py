@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from reversi.game import Game, Player, Utilities
+from reversi.game import Game, Player, Utilities, Field
 
 
 class Algorithm:
@@ -30,54 +30,118 @@ class Algorithm:
         else:
             opponent = Player.PLAYER
 
+        #
         # Reached to the deepest part of the given tree
+        #
+
         if depth == 0:
             # Calculate all of the node's values and return the one
             # with highest value
             for position in avail_moves:
                 val = Game.calc_val_of_move(player, position, matrix)
-
-                # Reverse score to negative if the current player is human
-                if player == Player.PLAYER:
-                    val = -val
-
-                result_list.append([position, val])
+                result_list.append([position,
+                                    Utilities.calc_value(player, val)])
 
             return Game.get_move_with_highest_score(result_list)
 
-        # In a normal state of tree.
+        #
+        # On the normal state of tree.
+        #
+
+        # Sort input
+        avail_moves = Utilities.sort_position_list(avail_moves)
+
+        # Start to check input for actions
         for position in avail_moves:
+            # Corner field. Get it at all costs!
+            if position in Field.ADVANTAGE:
+                val = Game.calc_val_of_move(player, position, matrix)
+                return [position, Utilities.calc_value(player, val)]
+
+            # Disadvantage field. Handle with cares.
+            if position in Field.DISADVANTAGE:
+                # Get player's flips and score
+                player_flips = Game.get_flip_traces(player, position, matrix)
+                player_flips.append(position)
+                matrix_virtual = Utilities.clone_matrix(matrix)
+                player_val = Game.make_move(player, position, matrix_virtual)
+
+                # Dig down 1 level
+                # Get opponent's possible moves
+                opponent_moves = Game.get_available_moves(opponent,
+                                                          matrix_virtual)
+                max_penalty = None
+
+                # Check if any of player's flip is on the way of opponent
+                for p in opponent_moves:
+                    # Who cares if opponent doesn't wanna take border?
+                    if p not in Field.BORDER:
+                        continue
+
+                    opponent_flips = Game.get_flip_traces(opponent,p,
+                                                          matrix_virtual)
+
+                    for f in player_flips:
+                        if f in opponent_flips:
+                            if max_penalty is None or \
+                                    max_penalty < (len(opponent_flips) + 1):
+                                max_penalty = len(opponent_flips) + 1
+
+                if max_penalty is None:
+                    # No danger thread. Take the advantage of border
+                    if position in Field.BORDER_DISADVANTAGE:
+                        return [position,
+                                Utilities.calc_value(player, player_val)]
+                    else:
+                        # Pass to next case (normal field)
+                        pass
+                else:
+                    result_list.append([
+                        position,
+                        Utilities.calc_value(player, player_val - max_penalty)
+                    ])
+
+            # Normal field
+            # Check if opponent has move on the virtual matrix
             matrix_virtual = Utilities.clone_matrix(matrix)
             val = Game.make_move(player, position, matrix_virtual)
 
-            # Check if opponent has move on the virtual matrix
+            # Check for next turn
             opponent_moves = Game.get_available_moves(opponent, matrix_virtual)
 
             if len(opponent_moves) == 0:
-
                 # Check if the player has move on the virtual matrix
                 player_moves = Game.get_available_moves(player, matrix_virtual)
 
                 if len(player_moves) == 0:
                     # Both has no move, reached to the end game.
-                    # Calculate the value of the current node and shift
-                    # to the next position.
-                    # TODO recheck score calculation method
-                    # TODO possible to trim down the tree right here
-                    result_list.append([position, val + 1])
+                    player_val, computer_val = \
+                        Utilities.calc_matrix_score(matrix_virtual)
+
+                    # TODO recheck fixed value
+                    # Set priority of end game with win flag on top
+                    if computer_val > player_val:
+                        return [position, 64]
+
+                    # TODO recheck fixed value
+                    if player_val > computer_val:
+                        val = -64
+
+                    result_list.append([
+                        position, Utilities.calc_value(player, val)
+                    ])
                     continue
 
-                # Opponent has no moves at this point.
-                # One extra move for current player.
-                # TODO possible to push the value to next virtual turn
-                best_move = Algorithm.do_minimax(depth - 1, matrix_virtual,
-                                                 player, player_moves)
-                result_list.append(best_move)
+                # Opponent has no moves at this point
+                # One extra move for current player
+                # Set priority to top.
+                # TODO recheck fixed value
+                result_list.append([player, Utilities.calc_value(player, 32)])
                 continue
 
             # Opponent has move. Process normally.
             best_move = Algorithm.do_minimax(depth - 1, matrix_virtual,
                                              opponent, opponent_moves)
-            result_list.append(best_move)
+            result_list.append([position, best_move[1]])
 
         return Game.get_move_with_highest_score(result_list)
