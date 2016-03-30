@@ -6,7 +6,7 @@ A game written in PyGObject (Gtk+ and Python 3) and cairo, using AI algorithms.
 
 - [x] Interface
 - [ ] Complete Functions
-- [ ] AI
+- [x] AI
 
 ---
 
