@@ -50,10 +50,10 @@ git clone https://github.com/bookletchoir/reversi_pygobject
 cd ~/reversi_pygobject/src
 ```
 
-- Run the `Application.py` file in `python3`
+- Run the `main` file in `python3`
 
 ```
-python3 Application.py
+python3 main.py
 ```
 
 ## Optional dependencies
