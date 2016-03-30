@@ -106,9 +106,6 @@ class DrawingArea(Gtk.DrawingArea):
 
         self.__draw_matrix(self.matrix, ctx)
 
-    def __on_mouse_press(self, widget, event):
-        pass
-
     def draw_piece(self, ctx, position_x, position_y, color,
                    border=False):
         """Draw piece on selected position
@@ -164,6 +161,9 @@ class DrawingArea(Gtk.DrawingArea):
         ctx.move_to(self.size / 2 - width / 2,
                     self.size / 2 + height / 2)
         ctx.show_text(self.pause_msg)
+
+    def redraw(self):
+        self.queue_draw()
 
     def set_color(self, player_color, computer_color):
         """Set color for player and computer's pieces

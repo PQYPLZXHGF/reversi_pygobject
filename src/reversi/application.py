@@ -35,7 +35,7 @@ class Application(Gtk.Window):
         self.connect('delete-event', Gtk.main_quit)
 
         # Initialize the new game
-        self.__init_newgame()
+        self.__init_new_game()
 
         # Create Title bar
         header = Gtk.HeaderBar(title='Reversi 0.1',
@@ -44,8 +44,16 @@ class Application(Gtk.Window):
         self.set_titlebar(header)
 
         # Create main container
+        vcontainer = Gtk.VBox(spacing=10)
+        self.status_entry = Gtk.Entry()
+        self.status_entry.set_editable(False)
+        self.status_entry.set_text("Press Start button to begin")
+        vcontainer.pack_end(self.status_entry, True, True, 0)
+
+        self.add(vcontainer)
+
         hcontainer = Gtk.HBox(spacing=10)
-        self.add(hcontainer)
+        vcontainer.pack_start(hcontainer, True, True, 0)
 
         # Create drawing area
         self.screen = DrawingArea(self.matrix)
@@ -69,7 +77,7 @@ class Application(Gtk.Window):
         # Display Application Window
         self.show_all()
 
-    def __init_newgame(self):
+    def __init_new_game(self):
         """Initialize new game
 
         :returns: none
@@ -82,10 +90,10 @@ class Application(Gtk.Window):
 
         if self.matrix is None:
             self.matrix = [[0 for col in range(8)] for row in range(8)]
-
-        for row in range(8):
-            for col in range(8):
-                self.matrix[row][col] = Player.NONE
+        else:
+            for row in range(8):
+                for col in range(8):
+                    self.matrix[row][col] = Player.NONE
 
         self.matrix[3][4] = Player.PLAYER
         self.matrix[4][3] = Player.PLAYER
@@ -98,8 +106,8 @@ class Application(Gtk.Window):
         :returns: none
 
         """
-        self.__init_newgame()
-        self.screen.queue_draw()
+        self.__init_new_game()
+        self.screen.redraw()
         self.current_player = Utilities().get_player()
         self.game_state = GameStatus.PLAYING
         self.panel.run_time_counter()
@@ -137,7 +145,7 @@ class Application(Gtk.Window):
         self.panel.btn_quit.set_sensitive(False)
 
         self.screen.is_paused = True
-        self.screen.queue_draw()
+        self.screen.redraw()
 
     def resume_game(self):
         """Resume the game from 'paused' status
@@ -155,7 +163,7 @@ class Application(Gtk.Window):
         self.panel.btn_quit.set_sensitive(True)
 
         self.screen.is_paused = False
-        self.screen.queue_draw()
+        self.screen.redraw()
 
     def stop_game(self):
         """Stop game
@@ -172,7 +180,7 @@ class Application(Gtk.Window):
         self.panel.btn_quit.set_sensitive(True)
 
         self.screen.is_paused = False
-        self.screen.queue_draw()
+        self.screen.redraw()
 
     def on_button_start_clicked(self, button):
         """Handle Start/Restart button
@@ -336,18 +344,6 @@ class Application(Gtk.Window):
         else:
             pass
 
-    def on_switch_show_debug_activated(self, switch, *args):
-        """Show Debug
-
-        :switch: switch
-        :args: none
-        :returns: none
-        """
-        if switch.get_active():
-            self.debug = True
-        else:
-            self.debug = False
-
     def get_position_in_matrix(self, position_x, position_y):
         """Determine the current pair of x, y position is in which cell of
            matrix
@@ -385,7 +381,7 @@ class Application(Gtk.Window):
         score = Game.make_move(self.current_player, position, self.matrix)
 
         # Redraw screen
-        self.screen.queue_draw()
+        self.screen.redraw()
 
         if score is False:  # Invalid move
             return False
@@ -405,7 +401,7 @@ class Application(Gtk.Window):
     def make_move_AI(self):
         """Makes move for AI
 
-        :returrns: none
+        :returns: none
 
         """
         avail_moves = Game.get_available_moves(self.current_player,
@@ -475,15 +471,6 @@ class Application(Gtk.Window):
                 and self.game_state == GameStatus.PLAYING:
             self.make_move_AI()
 
-    def print_matrix(self):
-        """Print the current matrix
-
-        :returns: none
-
-        """
-        for i in range(7):
-            self.print_debug(self.matrix[i][:])
-
     def run_time_counter(self):
         """Run time counter
 
@@ -503,6 +490,15 @@ class Application(Gtk.Window):
         """
         if self.timer_callback is not None:
             GLib.source_remove(self.timer_callback)
+
+    def start_pulse(self):
+        self.status_entry.set_progress_pulse_step(0.2)
+        self.timeout_id = GLib.timeout_add(100, self.do_pulse, None)
+
+    def stop_pulse(self):
+        GLib.source_remove(self.timeout_id)
+        self.timeout_id = None
+        self.status_entry.set_progress_pulse_step(0)
 
     def update_score_label(self):
         """ Update the score labels
@@ -533,8 +529,6 @@ class Application(Gtk.Window):
         return True
 
     def print_debug(self, *msg):
-        #if self.debug:
-        #    print(*msg)
         pass
 
     timer = 0
@@ -546,7 +540,7 @@ class Application(Gtk.Window):
     game_state = GameStatus.NONE
     current_player = Player.NONE
 
-    depth = 1
+    depth = 5
 
     pre_x = None
     pre_y = None

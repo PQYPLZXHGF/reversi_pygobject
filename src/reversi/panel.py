@@ -36,11 +36,8 @@ class Panel(Gtk.VBox):
         lbl_score_computer = Gtk.Label(halign=Gtk.Align.START)
         lbl_score_computer.set_label(self.computer_label)
 
-        lbl_showhint = Gtk.Label(halign=Gtk.Align.START)
-        lbl_showhint.set_label('Show hint')
-
-        lbl_showmove = Gtk.Label(halign=Gtk.Align.START)
-        lbl_showmove.set_label('Show debug log')
+        lbl_show_hints = Gtk.Label(halign=Gtk.Align.START)
+        lbl_show_hints.set_label('Show Hints')
 
         self.lbl_time_count = Gtk.Label(halign=Gtk.Align.END)
         self.lbl_time_count.set_label(Utilities().convert_time(self.timer))
@@ -68,9 +65,6 @@ class Panel(Gtk.VBox):
         self.btn_quit.set_label("Quit")
 
         self.switch_hint = Gtk.Switch(valign=Gtk.Align.END)
-
-        self.switch_show_debug = Gtk.Switch(valign=Gtk.Align.END)
-        self.switch_show_debug.set_active(self.debug)
 
         panel_listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
 
@@ -138,16 +132,8 @@ class Panel(Gtk.VBox):
         # Show hints row
         row = Gtk.ListBoxRow()
         hbox = Gtk.HBox(spacing=50)
-        hbox.pack_start(lbl_showhint, True, True, 0)
+        hbox.pack_start(lbl_show_hints, True, True, 0)
         hbox.pack_start(self.switch_hint, False, True, 0)
-        row.add(hbox)
-        panel_listbox.add(row)
-
-        # Show hints row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=50)
-        hbox.pack_start(lbl_showmove, True, True, 0)
-        hbox.pack_start(self.switch_show_debug, False, True, 0)
         row.add(hbox)
         panel_listbox.add(row)
 
@@ -183,9 +169,12 @@ class Panel(Gtk.VBox):
         :returns: None
 
         """
+        # TODO fix timer
+        """
         if self.timer_callback is not None:
             GLib.source_remove(self.timer_callback)
             self.timer_callback = None
+        """
 
     def set_time_label(self, time):
         """Set the time label's value.
@@ -230,7 +219,7 @@ class Panel(Gtk.VBox):
     player_label = "Player"
     computer_label = "Computer"
 
-    debug = True
+    timer_callback = None
 
 if __name__ == "__main__":
     import signal
