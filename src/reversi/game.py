@@ -221,6 +221,7 @@ class Game:
 
         """
         """ Deprecated """
+        # TODO use new method for better performance
         i_max = None
         val_max = None
         list_max = []
@@ -240,7 +241,7 @@ class Game:
 
         # Return the highest val
         if len(list_max) == 1:
-            return result_list[i_max]
+            return list_max[0]
 
         # Return random highest val
         return list_max[Utilities.get_random_number(0, len(list_max) - 1)]
