@@ -9,7 +9,7 @@ from gi.repository import Gtk
 from reversi.application import Application
 
 # Response to keyboard interrupt signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)\
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # Launch game
 application = Application()
