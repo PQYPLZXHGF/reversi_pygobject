@@ -136,7 +136,8 @@ class Algorithm:
                 # One extra move for current player
                 # Set priority to top.
                 # TODO recheck fixed value
-                result_list.append([player, Utilities.calc_value(player, 32)])
+                result_list.append([position,
+                                    Utilities.calc_value(player, 32)])
                 continue
 
             # Opponent has move. Process normally.
