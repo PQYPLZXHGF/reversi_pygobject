@@ -4,6 +4,10 @@ import random
 import datetime
 import time
 
+class GameMode:
+    EASY = 0
+    NORMAL = 1
+    HARD = 2
 
 class GameStatus:
     NONE = 0

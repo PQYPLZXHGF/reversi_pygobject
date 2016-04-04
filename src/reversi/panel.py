@@ -137,6 +137,32 @@ class Panel(Gtk.VBox):
         row.add(hbox)
         panel_listbox.add(row)
 
+        """ Deprecated
+        # Blank row
+        row = Gtk.ListBoxRow()
+        lbl_blank = Gtk.Label()
+        lbl_blank.set_label("")
+        row.add(lbl_blank)
+        panel_listbox.add(row)
+
+        # Difficulity Label
+        lbl_difficulity = Gtk.Label()
+        lbl_difficulity.set_label("Difficulity")
+        panel_listbox.add(lbl_difficulity)
+
+        # Difficulity mode row
+        row = Gtk.ListBoxRow()
+        hbox = Gtk.HBox(spacing=0)
+        self.btn_mode_easy = Gtk.ToggleButton.new_with_label("Easy")
+        self.btn_mode_norm = Gtk.ToggleButton.new_with_label("Normal")
+        self.btn_mode_hard = Gtk.ToggleButton.new_with_label("Hard")
+        hbox.pack_start(self.btn_mode_easy, True, True, 0)
+        hbox.pack_start(self.btn_mode_norm, True, True, 0)
+        hbox.pack_start(self.btn_mode_hard, True, True, 0)
+        row.add(hbox)
+        panel_listbox.add(row)
+        """
+
         self.pack_start(panel_listbox, True, True, 0)
         self.pack_end(self.btn_quit, False, True, 0)
         self.pack_end(self.btn_hiscore, False, True, 0)

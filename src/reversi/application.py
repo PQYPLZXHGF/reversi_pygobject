@@ -4,10 +4,11 @@ import gi
 gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, GLib
+from multiprocessing import Process
 
 from reversi.algorithm import Algorithm
 from reversi.drawingarea import DrawingArea
-from reversi.game import Game, GameStatus, Player, Utilities
+from reversi.game import Game, GameStatus, GameMode, Player, Utilities
 from reversi.panel import Panel
 from reversi.leaderboard import Leaderboard
 
@@ -45,10 +46,11 @@ class Application(Gtk.Window):
 
         # Create main container
         vcontainer = Gtk.VBox(spacing=10)
-        self.status_entry = Gtk.Entry()
-        self.status_entry.set_editable(False)
-        self.status_entry.set_text("Press Start button to begin")
-        vcontainer.pack_end(self.status_entry, True, True, 0)
+        # TODO consider entry
+        # self.status_entry = Gtk.Entry()
+        # self.status_entry.set_editable(False)
+        # self.status_entry.set_text("Press Start button to begin")
+        # vcontainer.pack_end(self.status_entry, True, True, 0)
 
         self.add(vcontainer)
 
@@ -124,6 +126,29 @@ class Application(Gtk.Window):
 
         self.screen.is_paused = False
         # self.screen.queue_draw()
+
+        # Difficulity dialog
+        dialog = Gtk.MessageDialog(parent=self)
+        dialog.set_markup("<b><big>What do you want to try?</big></b>")
+        dialog.format_secondary_text("Or I should say, how good are you?")
+        dialog.set_properties('buttons', Gtk.ButtonsType.NONE)
+        dialog.set_properties('message-type', Gtk.MessageType.QUESTION)
+
+        dialog.add_button("I'm new", GameMode.EASY)
+        dialog.add_button("I'm good ", GameMode.NORMAL)
+        dialog.add_button("Try to beat me", GameMode.HARD)
+
+        response = dialog.run()
+
+        # TODO implement mode
+        if response == GameMode.EASY:
+            self.depth = 1
+        elif response == GameMode.NORMAL:
+            self.depth = 3
+        else:
+            self.depth = 5
+
+        dialog.destroy()
 
         if self.current_player == Player.COMPUTER:
             self.make_move_AI()
@@ -338,6 +363,7 @@ class Application(Gtk.Window):
         :switch: switch
         :args: none
         :returns: none
+
         """
         if switch.get_active():
             pass
@@ -436,23 +462,38 @@ class Application(Gtk.Window):
                 self.stop_game()
 
                 if self.player_score > self.computer_score:
-                    self.print_debug("\nCongratulation!")
-                    self.print_debug("---------------")
-                    self.print_debug("You beat AI for",
-                                     self.player_score - self.computer_score,
-                                     "points")
+                    dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+                                               Gtk.ButtonsType.OK,
+                                               "Well Done! You're good.")
+                    dialog.format_secondary_text(
+                        "You beat computer for " +
+                        str(self.player_score - self.computer_score) +
+                        " points.")
+                    dialog.run()
+                    dialog.destroy()
                 elif self.player_score < self.computer_score:
-                    self.print_debug("\nNot always luck is by your side...")
-                    self.print_debug("------------------------------------")
-                    self.print_debug("AI got over you by",
-                                     self.computer_score - self.player_score,
-                                     "points")
+                    dialog = Gtk.MessageDialog(
+                        self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+                        "Not always luck is by your side"
+                    )
+                    dialog.format_secondary_text(
+                        "Computer got over you by " +
+                        str(self.computer_score - self.player_score) +
+                        " points."
+                    )
+                    dialog.run()
+                    dialog.destroy()
                 else:
-                    self.print_debug("\nI'm actually impresed!")
-                    self.print_debug("----------------------")
-                    self.print_debug("Draw! Same scores for each:",
-                                     self.player_score, "-",
-                                     self.computer_score)
+                    dialog = Gtk.MessageDialog(
+                        self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+                        "I'm actually impressed!"
+                    )
+                    dialog.format_secondary_text(
+                        "Wanna take another try? " +
+                        "You just got a draw with computer."
+                    )
+                    dialog.run()
+                    dialog.destroy()
             else:
                 if self.current_player == Player.PLAYER:
                     self.print_debug("\nAI has no moves, get the chance!\n")
@@ -540,7 +581,9 @@ class Application(Gtk.Window):
     game_state = GameStatus.NONE
     current_player = Player.NONE
 
-    depth = 5
+    game_mode = None
+
+    depth = None
 
     pre_x = None
     pre_y = None
