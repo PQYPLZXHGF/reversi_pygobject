@@ -183,7 +183,7 @@ class Game:
         """
         flip = Game.get_flip_traces(player, position, matrix)
 
-        if len(flip) == 0:
+        if not flip:
             return 0
 
         return len(flip) + 1
@@ -206,7 +206,7 @@ class Game:
                 if matrix[row][col] != 0:
                     continue
 
-                if len(Game.get_flip_traces(player, [row, col], matrix)) != 0:
+                if Game.get_flip_traces(player, [row, col], matrix):
                     moves.append([row, col])
 
         return moves
@@ -364,7 +364,7 @@ class Game:
         # Get flip list for current movement
         flip_stack = Game.get_flip_traces(player, position, matrix)
 
-        if len(flip_stack) == 0:
+        if not flip_stack:
             return False
 
         # Fill the flip list and player moves in matrix

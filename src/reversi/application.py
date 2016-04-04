@@ -452,12 +452,10 @@ class Application(Gtk.Window):
             opponent = Player.PLAYER
 
         # Check if there's any available moves for the opponent
-        if len(Game.get_available_moves(opponent, self.matrix)) == 0:
+        if not Game.get_available_moves(opponent, self.matrix):
 
             # Check if both players have no moves
-            if len(Game.get_available_moves(
-                self.current_player, self.matrix
-            )) == 0:
+            if not Game.get_available_moves(self.current_player, self.matrix):
                 self.panel.stop_time_counter()
                 self.stop_game()
 

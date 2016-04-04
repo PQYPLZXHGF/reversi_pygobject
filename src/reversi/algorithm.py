@@ -19,7 +19,7 @@ class Algorithm:
         """
 
         # Raise exception (unhandled case)
-        if len(avail_moves) == 0:
+        if not avail_moves:
             raise Exception("Encountered Error!")
 
         result_list = []
@@ -109,11 +109,11 @@ class Algorithm:
             # Check for next turn
             opponent_moves = Game.get_available_moves(opponent, matrix_virtual)
 
-            if len(opponent_moves) == 0:
+            if not opponent_moves:
                 # Check if the player has move on the virtual matrix
                 player_moves = Game.get_available_moves(player, matrix_virtual)
 
-                if len(player_moves) == 0:
+                if not player_moves:
                     # Both has no move, reached to the end game.
                     player_val, computer_val = \
                         Utilities.calc_matrix_score(matrix_virtual)
