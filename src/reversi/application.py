@@ -39,7 +39,7 @@ class Application(Gtk.Window):
         self.__init_new_game()
 
         # Create Title bar
-        header = Gtk.HeaderBar(title='Reversi 0.1',
+        header = Gtk.HeaderBar(title='Reversi 0.8',
                                subtitle="TDT University - Spring 2016",
                                show_close_button=True)
         self.set_titlebar(header)
@@ -139,16 +139,40 @@ class Application(Gtk.Window):
         dialog.add_button("Try to beat me", GameMode.HARD)
 
         response = dialog.run()
+        dialog.destroy()
 
-        # TODO implement mode
         if response == GameMode.EASY:
             self.depth = 1
+
+            dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+                Gtk.ButtonsType.OK, "Take it easy")
+            dialog_msg.format_secondary_text(
+                "Remember, you cannot win if you move blindly."
+            )
+            dialog_msg.run()
+            dialog_msg.destroy()
+
         elif response == GameMode.NORMAL:
-            self.depth = 3
-        else:
             self.depth = 5
 
-        dialog.destroy()
+            dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+                Gtk.ButtonsType.OK, "The Fotune Teller")
+            dialog_msg.format_secondary_text(
+                "I can see what will you do. Be prepared."
+            )
+            dialog_msg.run()
+            dialog_msg.destroy()
+        else:  # GameMode.HARD
+            self.depth = 5
+
+            dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+                Gtk.ButtonsType.OK, "Challenge Accepted")
+            dialog_msg.format_secondary_text(
+                "Don't regret what you just said."
+            )
+            dialog_msg.run()
+            dialog_msg.destroy()
+
 
         if self.current_player == Player.COMPUTER:
             self.make_move_AI()
@@ -432,8 +456,19 @@ class Application(Gtk.Window):
         """
         avail_moves = Game.get_available_moves(self.current_player,
                                                self.matrix)
-        pair = Algorithm().do_minimax(self.depth - 1, self.matrix,
-                                      self.current_player, avail_moves)
+        pair = []
+
+        if self.game_mode == GameMode.EASY:
+            pair = Algorithm.do_shallow_scan(self.matrix, self.current_player,
+                                             avail_moves)
+        elif self.game_mode == GameMode.NORMAL:
+            pair = Algorithm().do_minimax(self.depth - 1, self.matrix,
+                                          self.current_player, avail_moves)
+        else:  # GameMode.HARD
+            pair = Algorithm().do_alpha_beta_pruning(
+                self.depth - 1, self.matrix, self.current_player, avail_moves
+            )
+
         self.make_move(pair[0])
 
         self.switch_player()
@@ -472,7 +507,7 @@ class Application(Gtk.Window):
                 elif self.player_score < self.computer_score:
                     dialog = Gtk.MessageDialog(
                         self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
-                        "Not always luck is by your side"
+                        "Luck may not always be by your side"
                     )
                     dialog.format_secondary_text(
                         "Computer got over you by " +

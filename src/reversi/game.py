@@ -212,7 +212,7 @@ class Game:
         return moves
 
     @staticmethod
-    def get_move_with_highest_score(result_list):
+    def get_best_pair(result_list):
         """Calculate and give the move with highest score.
         If there's more than one move with highest score, the chosen one
         will be randomized from the list of highest scores.

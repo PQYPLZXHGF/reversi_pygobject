@@ -6,8 +6,119 @@ from reversi.game import Game, Player, Utilities, Field
 class Algorithm:
 
     @staticmethod
+    def do_shallow_scan(matrix, player, avail_moves, get_all=False):
+        """ Make a shallow scan on the surface of matrix and calculate
+        the scores.
+
+        :matrix: Matrix to check
+        :player: Current player
+        :avail_moves: Available move list for current player
+        :get_all: Returning the whole list with scores, can be used to show
+        hints on matrix. Default: False.
+        :returns: pair with highest value in format [[x, y], val].
+        If get_all is enabled, all of the positions in avail_moves with scores
+        will be returned instead.
+
+        """
+        # Raise exception (unhandled case)
+        if not avail_moves:
+            raise Exception("Encountered Error!")
+
+        for position in avail_moves:
+            val = Game.calc_val_of_move(player, position, matrix)
+            result_list.append([position,
+                                Utilities.calc_value(player, val)])
+
+        if get_all:
+            return result_list
+
+        return Game.get_best_pair(result_list)
+
+    @staticmethod
     def do_minimax(depth, matrix, player, avail_moves):
-        """ Do minimax algorithm to find the best move for computer
+        """ Do a plain minimax scan on the matrix for best pair.
+        CAUTION: Should not use with high depth.
+
+        :depth: Current depth level. Minimum is 0.
+        :matrix: Current matrix state.
+        :player: Current player.
+        :avail_moves: List of available moves for current player.
+        :returns: Move in format [[x, y] val] with highest value
+
+        """
+        # Raise exception (unhandled case)
+        if not avail_moves:
+            raise Exception("Encountered Error!")
+
+        result_list = []
+
+        # Determine the opponent
+        if player == Player.PLAYER:
+            opponent = Player.COMPUTER
+        else:
+            opponent = Player.PLAYER
+
+        #
+        # Reached to the deepest part of the given tree
+        #
+
+        if depth == 0:
+            # Calculate all of the node's values and return the one
+            # with highest value
+            for position in avail_moves:
+                val = Game.calc_val_of_move(player, position, matrix)
+                result_list.append([position,
+                                    Utilities.calc_value(player, val)])
+
+            return Game.get_best_pair(result_list)
+
+        for position in avail_moves:
+            matrix_virtual = Utilities.clone_matrix(matrix)
+            val = Game.make_move(player, position, matrix_virtual)
+
+            # Check for next turn
+            opponent_moves = Game.get_available_moves(opponent, matrix_virtual)
+
+            if not opponent_moves:
+                # Check if the player has move on the virtual matrix
+                player_moves = Game.get_available_moves(player, matrix_virtual)
+
+                if not player_moves:
+                    # Both has no move, reached to the end game.
+                    player_val, computer_val = \
+                        Utilities.calc_matrix_score(matrix_virtual)
+
+                    # TODO recheck fixed value
+                    # Set priority of end game with win flag on top
+                    if computer_val > player_val:
+                        return [position, 64]
+
+                    # TODO recheck fixed value
+                    if player_val > computer_val:
+                        val = -64
+
+                    result_list.append([
+                        position, Utilities.calc_value(player, val)
+                    ])
+                    continue
+
+                # Opponent has no moves at this point
+                # One extra move for current player
+                best_move = Algorithm.do_minimax(depth - 1, matrix_virtual,
+                                                 opponent, opponent_moves)
+                result_list.append([position, best_move[1]])
+
+            # Opponent has move. Process normally.
+            best_move = Algorithm.do_minimax(depth - 1, matrix_virtual,
+                                             opponent, opponent_moves)
+            result_list.append([position, best_move[1]])
+
+        return Game.get_best_pair(result_list)
+
+    @staticmethod
+    def do_alpha_beta_pruning(depth, matrix, player, avail_moves):
+        """ Do minimax algorithm with alpha-beta pruning to reduce analysis
+        time and improve AI level.
 
         :depth: Current depth level. Minimum is 0.
         :matrix: Current matrix state.
@@ -42,7 +153,7 @@ class Algorithm:
                 result_list.append([position,
                                     Utilities.calc_value(player, val)])
 
-            return Game.get_move_with_highest_score(result_list)
+            return Game.get_best_pair(result_list)
 
         #
         # On the normal state of tree.
@@ -78,7 +189,7 @@ class Algorithm:
                     if p not in Field.BORDER:
                         continue
 
-                    opponent_flips = Game.get_flip_traces(opponent,p,
+                    opponent_flips = Game.get_flip_traces(opponent, p,
                                                           matrix_virtual)
 
                     for f in player_flips:
@@ -141,8 +252,9 @@ class Algorithm:
                 continue
 
             # Opponent has move. Process normally.
-            best_move = Algorithm.do_minimax(depth - 1, matrix_virtual,
-                                             opponent, opponent_moves)
+            best_move = Algorithm.do_alpha_beta_pruning(
+                depth - 1, matrix_virtual, opponent, opponent_moves
+            )
             result_list.append([position, best_move[1]])
 
-        return Game.get_move_with_highest_score(result_list)
+        return Game.get_best_pair(result_list)
