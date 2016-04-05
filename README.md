@@ -59,6 +59,18 @@ python3 main.py
 ## Optional dependencies
 - UI font used to render text: `PragmataPro for Powerline`
 
+# Update
+
+1. Navigate to project folder:
+```
+cd ~/reversi_pygobject
+```
+
+2. Pull latest source
+```
+git pull
+```
+
 ---
 
 # Credits
