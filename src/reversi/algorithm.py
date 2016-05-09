@@ -7,25 +7,11 @@ class Algorithm:
 
     @staticmethod
     def do_shallow_scan(matrix, player, avail_moves, get_all=False):
-        """ Make a shallow scan on the surface of matrix and calculate
-        the scores.
-
-        :matrix: Matrix to check
-        :player: Current player
-        :avail_moves: Available move list for current player
-        :get_all: Returning the whole list with scores, can be used to show
-        hints on matrix. Default: False.
-        :returns: pair with highest value in format [[x, y], val].
-        If get_all is enabled, all of the positions in avail_moves with scores
-        will be returned instead.
-
-        """
-        # Raise exception (unhandled case)
-        if not avail_moves:
-            raise Exception("Encountered Error!")
+        """Make a shallow scan on the surface of matrix"""
+        result_list = []
 
         for position in avail_moves:
-            val = Game.calc_val_of_move(player, position, matrix)
+            val = Game.predict_score(player, position, matrix)
             result_list.append([position,
                                 Utilities.calc_value(player, val)])
 
@@ -36,16 +22,7 @@ class Algorithm:
 
     @staticmethod
     def do_minimax(depth, matrix, player, avail_moves):
-        """ Do a plain minimax scan on the matrix for best pair.
-        CAUTION: Should not use with high depth.
-
-        :depth: Current depth level. Minimum is 0.
-        :matrix: Current matrix state.
-        :player: Current player.
-        :avail_moves: List of available moves for current player.
-        :returns: Move in format [[x, y] val] with highest value
-
-        """
+        """Do a plain minimax scan on the matrix for best position"""
         # Raise exception (unhandled case)
         if not avail_moves:
             raise Exception("Encountered Error!")
@@ -66,7 +43,7 @@ class Algorithm:
             # Calculate all of the node's values and return the one
             # with highest value
             for position in avail_moves:
-                val = Game.calc_val_of_move(player, position, matrix)
+                val = Game.predict_score(player, position, matrix)
                 result_list.append([position,
                                     Utilities.calc_value(player, val)])
 
@@ -88,12 +65,10 @@ class Algorithm:
                     player_val, computer_val = \
                         Utilities.calc_matrix_score(matrix_virtual)
 
-                    # TODO recheck fixed value
                     # Set priority of end game with win flag on top
                     if computer_val > player_val:
                         return [position, 64]
 
-                    # TODO recheck fixed value
                     if player_val > computer_val:
                         val = -64
 
@@ -118,16 +93,7 @@ class Algorithm:
     @staticmethod
     def do_alpha_beta_pruning(depth, matrix, player, avail_moves):
         """ Do minimax algorithm with alpha-beta pruning to reduce analysis
-        time and improve AI level.
-
-        :depth: Current depth level. Minimum is 0.
-        :matrix: Current matrix state.
-        :player: Current player. Depend on the current player, algorithm
-                 used will be switched.
-        :avail_moves: List of available moves for current player.
-        :returns: Move in format [[x, y] val] with highest value
-
-        """
+        time and improve AI level"""
 
         # Raise exception (unhandled case)
         if not avail_moves:
@@ -149,7 +115,7 @@ class Algorithm:
             # Calculate all of the node's values and return the one
             # with highest value
             for position in avail_moves:
-                val = Game.calc_val_of_move(player, position, matrix)
+                val = Game.predict_score(player, position, matrix)
                 result_list.append([position,
                                     Utilities.calc_value(player, val)])
 
@@ -160,13 +126,13 @@ class Algorithm:
         #
 
         # Sort input
-        avail_moves = Utilities.sort_position_list(avail_moves)
+        avail_moves = Utilities.sort(avail_moves)
 
         # Start to check input for actions
         for position in avail_moves:
             # Corner field. Get it at all costs!
             if position in Field.ADVANTAGE:
-                val = Game.calc_val_of_move(player, position, matrix)
+                val = Game.predict_score(player, position, matrix)
                 return [position, Utilities.calc_value(player, val)]
 
             # Disadvantage field. Handle with cares.
@@ -229,12 +195,10 @@ class Algorithm:
                     player_val, computer_val = \
                         Utilities.calc_matrix_score(matrix_virtual)
 
-                    # TODO recheck fixed value
                     # Set priority of end game with win flag on top
                     if computer_val > player_val:
                         return [position, 64]
 
-                    # TODO recheck fixed value
                     if player_val > computer_val:
                         val = -64
 
@@ -243,10 +207,6 @@ class Algorithm:
                     ])
                     continue
 
-                # Opponent has no moves at this point
-                # One extra move for current player
-                # Set priority to top.
-                # TODO recheck fixed value
                 result_list.append([position,
                                     Utilities.calc_value(player, 32)])
                 continue

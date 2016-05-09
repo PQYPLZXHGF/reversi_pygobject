@@ -4,10 +4,12 @@ import random
 import datetime
 import time
 
+
 class GameMode:
     EASY = 0
     NORMAL = 1
     HARD = 2
+
 
 class GameStatus:
     NONE = 0
@@ -23,11 +25,7 @@ class Player:
 
 
 class Field:
-    """Re-define the matrix into fields
-
-    Use "position in Field.NAME" to check if the position is on defined field
-
-    """
+    """Define the matrix"""
 
     CORNER = [[0, 0], [0, 7], [7, 0], [7, 7]]
 
@@ -62,10 +60,7 @@ class Field:
 
 
 class Utilities:
-    """
-    Contains optional static methods as helpers
-
-    """
+    """Contains optional static methods as helpers"""
 
     @staticmethod
     def calc_matrix_score(matrix):
@@ -103,102 +98,69 @@ class Utilities:
 
     @staticmethod
     def get_player():
+        """Get random player"""
         return random.randint(Player.PLAYER, Player.COMPUTER)
 
     @staticmethod
-    def get_current_time(format="%H:%M:%S %d/%m/%Y"):
-        return time.strftime(format)
+    def get_current_time(fm="%H:%M:%S %d/%m/%Y"):
+        return time.strftime(fm)
 
     @staticmethod
-    def get_random_number(start, end):
-        """Get random integer number in given range
-
-        :returns: Random integer number in given range
-
-        """
+    def randint(start, end):
+        """Get random integer number in given range"""
         return random.randint(start, end)
 
     @staticmethod
-    def sort_position_list(positions):
-        """ Sort input positions to order: advantage > disadvantage > normal
-
-        :positions: List of positions in format [x, y]
-        :returns: Sorted list
-
-        """
-        sorted_list = []
+    def sort(positions):
+        """Sort input positions to order: advantage > disadvantage > normal"""
+        sorted_ = []
 
         # Add cornered positions
         for p in positions:
             if p in Field.CORNER:
-                sorted_list.append(p)
+                sorted_.append(p)
                 positions.remove(p)
 
         # Add advantage positions
         for p in positions:
             if p in Field.BORDER_ADVANTAGE:
-                sorted_list.append(p)
+                sorted_.append(p)
                 positions.remove(p)
 
         # Add disadvantage positions of borders
         for p in positions:
             if p in Field.BORDER_DISADVANTAGE:
-                sorted_list.append(p)
+                sorted_.append(p)
                 positions.remove(p)
 
         # Add disadvantage positions
         for p in positions:
             if p in Field.DISADVANTAGE:
-                sorted_list.append(p)
+                sorted_.append(p)
                 positions.remove(p)
 
         # Add remains (normals)
-        sorted_list += positions
+        sorted_ += positions
 
-        return sorted_list
+        return sorted_
 
     @staticmethod
     def calc_value(player, value):
-        """Re-assign the value based on which player is on.
-
-        :player: Player
-        :value: Value of player
-        :returns: Positive number if player is computer, else negative
-
-        """
+        """Re-assign the value based on which player is on"""
         return value if player == Player.COMPUTER else -value
+
 
 class Game:
     @staticmethod
-    def calc_val_of_move(player, position, matrix):
-        """Calculate the value of the given move on the matrix. Do not make
-        the actual move.
-
-        :player: Player who's making the move
-        :position: Position of [x, y]
-        :matrix: Matrix
-        :returns: Value (score) of current move, based on how many pieces
-        flipped, including the current move.
-
-        """
+    def predict_score(player, position, matrix):
+        """Predict the score of the given move on the matrix"""
         flip = Game.get_flip_traces(player, position, matrix)
 
-        if not flip:
-            return 0
-
-        return len(flip) + 1
+        return len(flip) + 1 if flip else 0
 
     @staticmethod
     def get_available_moves(player, matrix):
-        """Get available list of possible moves for the current player on the
-        given matrix.
-
-        :player: Player
-        :matrix: matrix to calculate
-        :returns: List of positions which is possible to make moves on, in
-        format [[x1, y1], [x2, y2], [x3, y3], ...]
-
-        """
+        """Get available list of possible moves"""
         moves = []
 
         for row in range(8):
@@ -213,26 +175,13 @@ class Game:
 
     @staticmethod
     def get_best_pair(result_list):
-        """Calculate and give the move with highest score.
-        If there's more than one move with highest score, the chosen one
-        will be randomized from the list of highest scores.
-
-        :result_list: list of moves in format [[[x1, y1], val1],
-         [[x2, y2], val2], [[x3, y3], val3], ...]
-        :returns: The best move in format [[x, y], val], which have highest
-        value or chosen randomly from the list which have the same (highest)
-        values.
-
-        """
-        """ Deprecated """
+        """Get pair with highest val. Randomize if there's more than 1 pair"""
         # TODO use new method for better performance
-        i_max = None
         val_max = None
         list_max = []
 
         for i, move in enumerate(result_list[:]):
             if val_max is None or move[1] > val_max:
-                i_max = i
                 val_max = move[1]
 
                 # Update list of max values
@@ -248,20 +197,11 @@ class Game:
             return list_max[0]
 
         # Return random highest val
-        return list_max[Utilities.get_random_number(0, len(list_max) - 1)]
+        return list_max[Utilities.randint(0, len(list_max) - 1)]
 
     @staticmethod
     def get_flip_traces(player, position, matrix):
-        """ Get the list of flip traces as position for the current player on
-        the given position. Does not make the actual move.
-
-        :player: Player
-        :position: Position [x, y] on matrix, must be a valid move
-        :matrix: matrix to make move on.
-        :returns: List of position which can be flipped for scoring, in list
-        format of [[x1, y1], [x2, y2], [x3, y3], ...]
-
-        """
+        """Get flip traces at given position."""
 
         flips = []
         x, y = position[:]
@@ -315,12 +255,7 @@ class Game:
 
     @staticmethod
     def is_on_matrix(position):
-        """Check if current position is on matrix.
-
-        :position: pair of [x, y] position on matrix
-        :returns: True if the given position is on matrix. Otherwise, False.
-
-        """
+        """Check if current position is on matrix"""
         x, y = position[:]
 
         if x < 0 or y < 0 or x > 7 or y > 7:
@@ -329,35 +264,10 @@ class Game:
         return True
 
     @staticmethod
-    def get_nearby_borders(position, matrix):
-        """Get nearby available positions which is on border
-
-        :position: Position in format [x, y]
-        :matrix: Current matrix
-
-        """
-        relatives = []
-
-        for x_direction, y_direction in Field.DIRECTION:
-            x, y = position[:]
-            x_forward = x + x_direction
-            y_forward = y + y_direction
-
-            if Game.is_on_borderline(position) and \
-                    matrix[x_forward, y_forward] == 0:
-                relatives.append([x_forward, y_forward])
-
-        return relatives
-
-    @staticmethod
     def make_move(player, position, matrix):
         """Make move at the given position
 
-        :player: Player who makes move
-        :position: Position [x, y] to make move on
-        :matrix: Matrix to make move on, can be virtual one
         :returns: Length of flipped pieces. False if move can't be made.
-
         """
         row, col = position[:]
 

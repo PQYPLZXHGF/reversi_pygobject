@@ -4,7 +4,6 @@ import gi
 gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, GLib
-from multiprocessing import Process
 
 from reversi.algorithm import Algorithm
 from reversi.drawingarea import DrawingArea
@@ -20,17 +19,16 @@ class Application(Gtk.Window):
 
     """
 
-    def __init__(self):
-        """
-        Initialize Application Window
-
-        """
-        Gtk.Window.__init__(self)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Default properties
         self.set_title("reversi")
         self.set_border_width(10)
         self.set_resizable(False)
+
+        self.timer_callback = None
+        self.timeout_id = None
 
         # Default events
         self.connect('delete-event', Gtk.main_quit)
@@ -39,18 +37,13 @@ class Application(Gtk.Window):
         self.__init_new_game()
 
         # Create Title bar
-        header = Gtk.HeaderBar(title='Reversi 0.8',
+        header = Gtk.HeaderBar(title='Reversi 0.9',
                                subtitle="TDT University - Spring 2016",
                                show_close_button=True)
         self.set_titlebar(header)
 
         # Create main container
         vcontainer = Gtk.VBox(spacing=10)
-        # TODO consider entry
-        # self.status_entry = Gtk.Entry()
-        # self.status_entry.set_editable(False)
-        # self.status_entry.set_text("Press Start button to begin")
-        # vcontainer.pack_end(self.status_entry, True, True, 0)
 
         self.add(vcontainer)
 
@@ -80,11 +73,7 @@ class Application(Gtk.Window):
         self.show_all()
 
     def __init_new_game(self):
-        """Initialize new game
-
-        :returns: none
-
-        """
+        """Initialize new game"""
         self.game_state = GameStatus.NONE
         self.current_player = Player.NONE
         self.player_score = 2
@@ -103,11 +92,7 @@ class Application(Gtk.Window):
         self.matrix[4][4] = Player.COMPUTER
 
     def start_game(self):
-        """Start the game
-
-        :returns: none
-
-        """
+        """Start the game"""
         self.__init_new_game()
         self.screen.redraw()
         self.current_player = Utilities().get_player()
@@ -145,7 +130,7 @@ class Application(Gtk.Window):
             self.depth = 1
 
             dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-                Gtk.ButtonsType.OK, "Take it easy")
+                                           Gtk.ButtonsType.OK, "Take it easy")
             dialog_msg.format_secondary_text(
                 "Remember, you cannot win if you move blindly."
             )
@@ -156,7 +141,8 @@ class Application(Gtk.Window):
             self.depth = 5
 
             dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-                Gtk.ButtonsType.OK, "The Fotune Teller")
+                                           Gtk.ButtonsType.OK,
+                                           "The Fotune Teller")
             dialog_msg.format_secondary_text(
                 "I can see what will you do. Be prepared."
             )
@@ -166,23 +152,20 @@ class Application(Gtk.Window):
             self.depth = 5
 
             dialog_msg = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-                Gtk.ButtonsType.OK, "Challenge Accepted")
+                                           Gtk.ButtonsType.OK,
+                                           "Challenge Accepted")
             dialog_msg.format_secondary_text(
                 "Don't regret what you just said."
             )
             dialog_msg.run()
             dialog_msg.destroy()
 
-
         if self.current_player == Player.COMPUTER:
-            self.make_move_AI()
+            self.make_move_ai()
 
     def pause_game(self):
-        """Send the game to 'paused' status
+        """Send the game to 'paused' status"""
 
-        :returns: none
-
-        """
         self.game_state = GameStatus.PAUSED
         self.panel.stop_time_counter()
 
@@ -197,10 +180,8 @@ class Application(Gtk.Window):
         self.screen.redraw()
 
     def resume_game(self):
-        """Resume the game from 'paused' status
+        """Resume the game from 'paused' status"""
 
-        :returns: none
-        """
         self.game_state = GameStatus.PLAYING
         self.panel.run_time_counter()
 
@@ -215,11 +196,8 @@ class Application(Gtk.Window):
         self.screen.redraw()
 
     def stop_game(self):
-        """Stop game
+        """Stop game"""
 
-        :returns: none
-
-        """
         self.game_state = GameStatus.STOPPED
         self.panel.btn_start.set_label("Start Over")
         self.panel.btn_hiscore.set_label("High Scores")
@@ -232,11 +210,7 @@ class Application(Gtk.Window):
         self.screen.redraw()
 
     def on_button_start_clicked(self, button):
-        """Handle Start/Restart button
-
-        :returns: True
-
-        """
+        """Handle Start/Restart button"""
         if self.game_state == GameStatus.NONE \
                 or self.game_state == GameStatus.STOPPED:
             self.start_game()
@@ -265,13 +239,7 @@ class Application(Gtk.Window):
         return True
 
     def on_button_hiscore_clicked(self, button, *args):
-        """Show the leaderboard and receive new high score (if any).
-
-        :button: button
-        :args: current score and time
-        :returns: none
-
-        """
+        """Show the leaderboard and receive new high score (if any)."""
         if self.game_state == GameStatus.PLAYING:
             self.pause_game()
         elif self.game_state == GameStatus.PAUSED:
@@ -282,12 +250,7 @@ class Application(Gtk.Window):
             leaderboard.show_all()
 
     def on_button_quit_clicked(self, button, *args):
-        """Show the quit confirmation dialog.
-
-        :button: button
-        :args: TODO
-        :returns: none
-        """
+        """Show the quit confirmation dialog."""
         if self.game_state == GameStatus.PLAYING \
                 or self.game_state == GameStatus.PAUSED:
             # Create surrender confirmation dialog
@@ -402,11 +365,14 @@ class Application(Gtk.Window):
         :position_y: y position in pixel
         :returns: position x, y of matrix, (-1, -1) if out-of-bound
         """
+        row = -1
+        col = -1
+
         if (position_x < self.screen.cell_size) \
-           or (position_x > self.screen.size - self.screen.cell_size) \
-           or (position_y < self.screen.cell_size) \
-           or (position_y > self.screen.size - self.screen.cell_size):
-            return -1, -1
+                or (position_x > self.screen.size - self.screen.cell_size) \
+                or (position_y < self.screen.cell_size) \
+                or (position_y > self.screen.size - self.screen.cell_size):
+            return row, col
 
         for row in range(8):
             if (row + 2) * self.screen.cell_size > position_y:
@@ -448,7 +414,7 @@ class Application(Gtk.Window):
         self.panel.update_turn_label()
         self.panel.set_score(self.player_score, self.computer_score)
 
-    def make_move_AI(self):
+    def make_move_ai(self):
         """Makes move for AI
 
         :returns: none
@@ -543,14 +509,10 @@ class Application(Gtk.Window):
         # let it make the way
         if self.current_player == Player.COMPUTER \
                 and self.game_state == GameStatus.PLAYING:
-            self.make_move_AI()
+            self.make_move_ai()
 
     def run_time_counter(self):
-        """Run time counter
-
-        :returns: none
-
-        """
+        """Run time counter"""
 
         self.timer_callback = GLib.timeout_add_seconds(
             1, self.__update_timer_label, None
@@ -560,7 +522,6 @@ class Application(Gtk.Window):
         """Pause the current time counter (if any)
 
         :returns: none
-
         """
         if self.timer_callback is not None:
             GLib.source_remove(self.timer_callback)

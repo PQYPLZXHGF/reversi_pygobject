@@ -12,8 +12,9 @@ class Panel(Gtk.VBox):
 
     """
 
-    def __init__(self):
-        Gtk.Box.__init__(self)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_size_request(200, 200)
 
         lbl_information = Gtk.Label()
         lbl_information.set_markup("<b>Information</b>")
@@ -74,12 +75,14 @@ class Panel(Gtk.VBox):
         panel_listbox.add(row)
 
         # Timer row
+        """
         row = Gtk.ListBoxRow()
         hbox = Gtk.HBox(spacing=50)
         hbox.pack_start(lbl_time, True, True, 0)
         hbox.pack_start(self.lbl_time_count, True, True, 0)
         row.add(hbox)
         panel_listbox.add(row)
+        """
 
         # Turn row
         row = Gtk.ListBoxRow()
@@ -124,6 +127,7 @@ class Panel(Gtk.VBox):
         row.add(lbl_blank)
         panel_listbox.add(row)
 
+        """
         # Setting row
         row = Gtk.ListBoxRow()
         row.add(lbl_setting)
@@ -136,36 +140,11 @@ class Panel(Gtk.VBox):
         hbox.pack_start(self.switch_hint, False, True, 0)
         row.add(hbox)
         panel_listbox.add(row)
-
-        """ Deprecated
-        # Blank row
-        row = Gtk.ListBoxRow()
-        lbl_blank = Gtk.Label()
-        lbl_blank.set_label("")
-        row.add(lbl_blank)
-        panel_listbox.add(row)
-
-        # Difficulity Label
-        lbl_difficulity = Gtk.Label()
-        lbl_difficulity.set_label("Difficulity")
-        panel_listbox.add(lbl_difficulity)
-
-        # Difficulity mode row
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.HBox(spacing=0)
-        self.btn_mode_easy = Gtk.ToggleButton.new_with_label("Easy")
-        self.btn_mode_norm = Gtk.ToggleButton.new_with_label("Normal")
-        self.btn_mode_hard = Gtk.ToggleButton.new_with_label("Hard")
-        hbox.pack_start(self.btn_mode_easy, True, True, 0)
-        hbox.pack_start(self.btn_mode_norm, True, True, 0)
-        hbox.pack_start(self.btn_mode_hard, True, True, 0)
-        row.add(hbox)
-        panel_listbox.add(row)
         """
 
         self.pack_start(panel_listbox, True, True, 0)
         self.pack_end(self.btn_quit, False, True, 0)
-        self.pack_end(self.btn_hiscore, False, True, 0)
+        """self.pack_end(self.btn_hiscore, False, True, 0)"""
         self.pack_end(self.btn_start, False, True, 0)
 
     def set_score(self, player_score, computer_score):
@@ -201,6 +180,7 @@ class Panel(Gtk.VBox):
             GLib.source_remove(self.timer_callback)
             self.timer_callback = None
         """
+        pass
 
     def set_time_label(self, time):
         """Set the time label's value.
@@ -221,7 +201,7 @@ class Panel(Gtk.VBox):
         self.turn = turn
         self.lbl_turn_count.set_label(repr(self.turn))
 
-    def __update_timer_label(self):
+    def __update_timer_label(self, *args):
         """Update time label by 1 second
 
         :returns: True
