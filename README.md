@@ -38,19 +38,19 @@ sudo apt-get install git
 
 ## Running the Game
 
-- Clone the project
+1. Clone the project
 
 ```
 git clone https://github.com/bookletchoir/reversi_pygobject
 ```
 
-- Navigate to `src` folder
+2. Navigate to `src` folder
 
 ```
 cd ~/reversi_pygobject/src
 ```
 
-- Run the `main` file in `python3`
+3. Run the `main` file in `python3`
 
 ```
 python3 main.py
