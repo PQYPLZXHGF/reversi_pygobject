@@ -8,21 +8,33 @@ from gi.repository import Gtk, Gdk
 
 
 class DrawingArea(Gtk.DrawingArea):
-
-    """
-    Custom widget to act as playing screen
-
-    """
+    """Custom widget to use as game screen"""
 
     def __init__(self, matrix, *args):
         Gtk.DrawingArea.__init__(self)
         self.connect('draw', self.__on_draw)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
-        self.set_size_request(self.size, self.size)
 
+        # Init values
         self.matrix = matrix
+        self.board_line_width = 2
+        self.size = 500
+        self.cell_size = self.size / 10
+        self.radius = self.cell_size / 2 - 5
+        self.pause_msg = "GAME PAUSED"
+        self.is_paused = False
 
+        self.bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9, 'a': 1}  # Gray
+        self.fg_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
+        self.player_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
+        self.computer_color = {'r': 1, 'g': 1, 'b': 1, 'a': 1}  # White
+        self.hint_color = {'r': self.player_color['r'],
+                           'g': self.player_color['r'],
+                           'b': self.player_color['b'],
+                           'a': self.player_color['a'] / 2}
+
+        self.set_size_request(self.size, self.size)
         self.show_all()
 
     def __on_draw(self, widget, ctx):
@@ -34,12 +46,7 @@ class DrawingArea(Gtk.DrawingArea):
             self.__draw_matrix(self.matrix, ctx)
 
     def __init_board(self, ctx):
-        """Draw chess board
-
-        :ctx: cairo context
-        :returns: none
-
-        """
+        """Draw chess board"""
         ctx.set_antialias(cairo.ANTIALIAS_SUBPIXEL)
         # Fill background's color
         ctx.set_source_rgba(self.bg_color['r'], self.bg_color['g'],
@@ -110,12 +117,11 @@ class DrawingArea(Gtk.DrawingArea):
                    border=False):
         """Draw piece on selected position
 
-        :position_x: row number in matrix
-        :position_y: column number in matrix
-        :color: color in format {'r': val, 'g': val, 'b': val, 'a': val}
-                where val is a float in a number from 0 to 1
-        :returns: none
-
+        :param border:
+        :param color:
+        :param ctx:
+        :param position_x: row number in matrix
+        :param position_y: column number in matrix
         """
 
         ctx.set_source_rgba(color['r'], color['g'], color['b'], color['a'])
@@ -134,11 +140,7 @@ class DrawingArea(Gtk.DrawingArea):
             ctx.stroke()
 
     def __draw_pause_screen(self, ctx):
-        """Draw pause screen
-
-        :returns: none
-
-        """
+        """Draw pause screen"""
         # Fill background
         ctx.set_source_rgba(self.bg_color['r'], self.bg_color['g'],
                             self.bg_color['b'], self.bg_color['a'])
@@ -163,29 +165,16 @@ class DrawingArea(Gtk.DrawingArea):
         ctx.show_text(self.pause_msg)
 
     def redraw(self):
+        """Redraw screen"""
         self.queue_draw()
 
     def set_color(self, player_color, computer_color):
-        """Set color for player and computer's pieces
-
-        :player_color: color in format {'r': val, 'g': val, 'b': val, 'a': val}
-                       where val is a float in a number from 0 to 1
-        :computer_color: color in format {'r': val, 'g': val, 'b': val,
-                        'a': val} where val is a float in a number from 0 to 1
-        :returns: none
-
-        """
+        """Set color for player and computer's pieces"""
         self.player_color = player_color
         self.computer_color = computer_color
 
     def __draw_matrix(self, matrix, ctx):
-        """
-        Draw the pieces on the screen based on matrix
-
-        :matrix: matrix of 8x8
-        :returns: none
-
-        """
+        """Draw the pieces on the screen based on matrix"""
 
         for row in range(8):
             for col in range(8):
@@ -197,19 +186,3 @@ class DrawingArea(Gtk.DrawingArea):
                     self.draw_piece(ctx, row, col, self.hint_color, False)
                 else:
                     self.draw_piece(ctx, row, col, self.bg_color)
-
-    matrix = None
-    board_line_width = 2
-    size = 500
-    cell_size = size / 10
-    radius = cell_size / 2 - 5
-    pause_msg = "GAME PAUSED"
-    is_paused = False
-
-    bg_color = {'r': 0.9, 'g': 0.9, 'b': 0.9, 'a': 1}  # Gray
-    fg_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
-
-    player_color = {'r': 0, 'g': 0, 'b': 0, 'a': 1}  # Black
-    computer_color = {'r': 1, 'g': 1, 'b': 1, 'a': 1}  # White
-    hint_color = {'r': player_color['r'], 'g': player_color['r'],
-                  'b': player_color['b'], 'a': player_color['a'] / 2}

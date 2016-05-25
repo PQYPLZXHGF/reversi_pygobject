@@ -66,7 +66,6 @@ class Utilities:
     def calc_matrix_score(matrix):
         """Calculate the score of current matrix
 
-        :matrix: matrix
         :returns: list of score [player, computer]
 
         """
@@ -86,7 +85,6 @@ class Utilities:
     def clone_matrix(matrix):
         """Clone the given matrix to an independent matrix
 
-        :matrix: Matrix to clone.
         :returns: An independent matrix.
 
         """

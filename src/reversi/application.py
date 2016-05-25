@@ -9,15 +9,10 @@ from reversi.algorithm import Algorithm
 from reversi.drawingarea import DrawingArea
 from reversi.game import Game, GameStatus, GameMode, Player, Utilities
 from reversi.panel import Panel
-from reversi.leaderboard import Leaderboard
 
 
 class Application(Gtk.Window):
-
-    """
-    Main window of game.
-
-    """
+    """Main window of game"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,19 +22,30 @@ class Application(Gtk.Window):
         self.set_border_width(10)
         self.set_resizable(False)
 
-        self.timer_callback = None
-        self.timeout_id = None
-
         # Default events
         self.connect('delete-event', Gtk.main_quit)
+
+        # Game variables
+        self.turn = 0
+        self.depth = 0
+        self.player_score = 2
+        self.computer_score = 2
+        self.game_mode = None
+        self.game_state = GameStatus.NONE
+        self.current_player = Player.NONE
+        self.pre_x = -1
+        self.pre_y = -1
+        self.matrix = None
 
         # Initialize the new game
         self.__init_new_game()
 
         # Create Title bar
-        header = Gtk.HeaderBar(title='Reversi 0.9',
-                               subtitle="TDT University - Spring 2016",
-                               show_close_button=True)
+        header = Gtk.HeaderBar(
+            title='Reversi 0.9',
+            subtitle="TDT University - Spring 2016",
+            show_close_button=True
+        )
         self.set_titlebar(header)
 
         # Create main container
@@ -64,8 +70,6 @@ class Application(Gtk.Window):
 
         self.panel.btn_start.connect('clicked',
                                      self.on_button_start_clicked)
-        self.panel.btn_hiscore.connect('clicked',
-                                       self.on_button_hiscore_clicked)
         self.panel.btn_quit.connect('clicked',
                                     self.on_button_quit_clicked)
 
@@ -74,11 +78,14 @@ class Application(Gtk.Window):
 
     def __init_new_game(self):
         """Initialize new game"""
+
+        # Initialize game status
         self.game_state = GameStatus.NONE
         self.current_player = Player.NONE
         self.player_score = 2
         self.computer_score = 2
 
+        # Initialize matrix
         if self.matrix is None:
             self.matrix = [[0 for col in range(8)] for row in range(8)]
         else:
@@ -86,6 +93,7 @@ class Application(Gtk.Window):
                 for col in range(8):
                     self.matrix[row][col] = Player.NONE
 
+        # Set default pieces
         self.matrix[3][4] = Player.PLAYER
         self.matrix[4][3] = Player.PLAYER
         self.matrix[3][3] = Player.COMPUTER
@@ -95,16 +103,14 @@ class Application(Gtk.Window):
         """Start the game"""
         self.__init_new_game()
         self.screen.redraw()
+
+        # Randomize first player
         self.current_player = Utilities().get_player()
+
         self.game_state = GameStatus.PLAYING
-        self.panel.run_time_counter()
 
         self.panel.btn_start.set_label("Restart")
-        self.panel.btn_hiscore.set_label("Pause")
         self.panel.btn_quit.set_label("Surrender")
-
-        self.panel.btn_start.set_sensitive(True)
-        self.panel.btn_quit.set_sensitive(True)
 
         self.panel.set_turn(self.turn)
         self.panel.set_score(self.player_score, self.computer_score)
@@ -112,7 +118,7 @@ class Application(Gtk.Window):
         self.screen.is_paused = False
         # self.screen.queue_draw()
 
-        # Difficulity dialog
+        # Difficulty dialog
         dialog = Gtk.MessageDialog(parent=self)
         dialog.set_markup("<b><big>What do you want to try?</big></b>")
         dialog.format_secondary_text("Or I should say, how good are you?")
@@ -126,6 +132,7 @@ class Application(Gtk.Window):
         response = dialog.run()
         dialog.destroy()
 
+        # Start game with selected mode
         if response == GameMode.EASY:
             self.depth = 1
 
@@ -167,14 +174,9 @@ class Application(Gtk.Window):
         """Send the game to 'paused' status"""
 
         self.game_state = GameStatus.PAUSED
-        self.panel.stop_time_counter()
 
         self.panel.btn_start.set_label("Restart")
-        self.panel.btn_hiscore.set_label("Resume")
         self.panel.btn_quit.set_label("Surrender")
-
-        self.panel.btn_start.set_sensitive(False)
-        self.panel.btn_quit.set_sensitive(False)
 
         self.screen.is_paused = True
         self.screen.redraw()
@@ -183,14 +185,9 @@ class Application(Gtk.Window):
         """Resume the game from 'paused' status"""
 
         self.game_state = GameStatus.PLAYING
-        self.panel.run_time_counter()
 
         self.panel.btn_start.set_label("Restart")
-        self.panel.btn_hiscore.set_label("Pause")
         self.panel.btn_quit.set_label("Surrender")
-
-        self.panel.btn_start.set_sensitive(True)
-        self.panel.btn_quit.set_sensitive(True)
 
         self.screen.is_paused = False
         self.screen.redraw()
@@ -200,7 +197,6 @@ class Application(Gtk.Window):
 
         self.game_state = GameStatus.STOPPED
         self.panel.btn_start.set_label("Start Over")
-        self.panel.btn_hiscore.set_label("High Scores")
         self.panel.btn_quit.set_label("Quit")
 
         self.panel.btn_start.set_sensitive(True)
@@ -209,12 +205,15 @@ class Application(Gtk.Window):
         self.screen.is_paused = False
         self.screen.redraw()
 
-    def on_button_start_clicked(self, button):
+    def on_button_start_clicked(self, button, *args):
         """Handle Start/Restart button"""
+
         if self.game_state == GameStatus.NONE \
                 or self.game_state == GameStatus.STOPPED:
+            # Start new game
             self.start_game()
         else:
+            # Restart game
             self.pause_game()
             dialog = Gtk.MessageDialog(parent=self)
             dialog.set_markup("<b><big>Do you want to Restart?</big></b>")
@@ -229,7 +228,6 @@ class Application(Gtk.Window):
             response = dialog.run()
 
             if response == Gtk.ResponseType.OK:
-                # self.stop_time_counter()
                 self.start_game()
             else:
                 self.resume_game()
@@ -237,17 +235,6 @@ class Application(Gtk.Window):
             dialog.destroy()
 
         return True
-
-    def on_button_hiscore_clicked(self, button, *args):
-        """Show the leaderboard and receive new high score (if any)."""
-        if self.game_state == GameStatus.PLAYING:
-            self.pause_game()
-        elif self.game_state == GameStatus.PAUSED:
-            self.resume_game()
-        else:
-            leaderboard = Leaderboard()
-            # TODO implement leaderboard
-            leaderboard.show_all()
 
     def on_button_quit_clicked(self, button, *args):
         """Show the quit confirmation dialog."""
@@ -295,40 +282,28 @@ class Application(Gtk.Window):
     def on_mouse_pressed_drawingarea(self, widget, event):
         """Handle mouse press event: Save current mouse clicked position and
         pass the event to next handler.
-
-        :widget: Gtk.DrawingArea
-        :event: mouse event
-        :return: none
-
         """
-        # Ignore if
+        # Ignore if game hasn't started
         if self.game_state == GameStatus.NONE:
             return True
 
+        # Set pre_x and pre_y
         self.pre_x, self.pre_y = self.get_position_in_matrix(int(event.x),
                                                              int(event.y))
 
         return False  # Pass the event to next handler
 
     def on_mouse_released_drawingarea(self, widget, event):
-        """Handle mouse release on drawing area
-
-        :widget: Gtk.DrawingArea
-        :event: mouse click
-        :returns: none
-
-        """
-        # Block movement on certains game status
+        """Handle mouse release on drawing area"""
+        # Block movement on certain game status
         if self.game_state != GameStatus.PLAYING \
                 or self.current_player != Player.PLAYER:
             return True
 
         row, col = self.get_position_in_matrix(int(event.x), int(event.y))
 
-        """
-        Check if mouse pressed event and mouse released event is is the
-        same cell. If not, ignore move.
-        """
+        # Check if mouse pressed event and mouse released event is is the
+        # same cell. If not, ignore move.
         if not (self.pre_x == row and self.pre_y == col):
             return True
 
@@ -344,26 +319,10 @@ class Application(Gtk.Window):
         # Destroy the event
         return True
 
-    def on_switch_hint_activated(self, switch, *args):
-        """Show hints.
-
-        :switch: switch
-        :args: none
-        :returns: none
-
-        """
-        if switch.get_active():
-            pass
-        else:
-            pass
-
     def get_position_in_matrix(self, position_x, position_y):
-        """Determine the current pair of x, y position is in which cell of
-           matrix
+        """Determine the current pair of x, y position on matrix
 
-        :position_x: x position in pixel
-        :position_y: y position in pixel
-        :returns: position x, y of matrix, (-1, -1) if out-of-bound
+        :returns: position (x, y) of matrix; (-1, -1) if out-of-bound
         """
         row = -1
         col = -1
@@ -440,11 +399,7 @@ class Application(Gtk.Window):
         self.switch_player()
 
     def switch_player(self):
-        """Switch current player
-
-        :returns: none
-
-        """
+        """Switch current player"""
         opponent = None
 
         if self.current_player == Player.PLAYER:
@@ -457,7 +412,6 @@ class Application(Gtk.Window):
 
             # Check if both players have no moves
             if not Game.get_available_moves(self.current_player, self.matrix):
-                self.panel.stop_time_counter()
                 self.stop_game()
 
                 if self.player_score > self.computer_score:
@@ -503,83 +457,17 @@ class Application(Gtk.Window):
         else:
             self.current_player = opponent
 
-            # TODO add player to leaderboard
-
         # If there's any valid moves for computer and the game still continues,
         # let it make the way
         if self.current_player == Player.COMPUTER \
                 and self.game_state == GameStatus.PLAYING:
             self.make_move_ai()
 
-    def run_time_counter(self):
-        """Run time counter"""
-
-        self.timer_callback = GLib.timeout_add_seconds(
-            1, self.__update_timer_label, None
-        )
-
-    def stop_time_counter(self):
-        """Pause the current time counter (if any)
-
-        :returns: none
-        """
-        if self.timer_callback is not None:
-            GLib.source_remove(self.timer_callback)
-
-    def start_pulse(self):
-        self.status_entry.set_progress_pulse_step(0.2)
-        self.timeout_id = GLib.timeout_add(100, self.do_pulse, None)
-
-    def stop_pulse(self):
-        GLib.source_remove(self.timeout_id)
-        self.timeout_id = None
-        self.status_entry.set_progress_pulse_step(0)
-
     def update_score_label(self):
-        """ Update the score labels
-
-        :returns: none
-
-        """
+        """ Update the score labels"""
         self.lbl_score_player_count.set_label(repr(self.player_score))
         self.lbl_score_computer_count.set_label(repr(self.computer_score))
 
     def update_turn_label(self):
-        """Update the turn label
-
-        :returns: none
-
-        """
+        """Update the turn label"""
         self.lbl_turn_count.set_label(repr(self.turn))
-
-    def __update_timer_label(self, *user_data):
-        """Update the timer label
-
-        :returns: none
-
-        """
-        self.timer += 1
-        self.lbl_time_count.set_label(Utilities().convert_time(self.timer))
-
-        return True
-
-    def print_debug(self, *msg):
-        pass
-
-    timer = 0
-    turn = 0
-    player_label = "Player"
-    player_score = 2
-    computer_label = "Computer"
-    computer_score = 2
-    game_state = GameStatus.NONE
-    current_player = Player.NONE
-
-    game_mode = None
-
-    depth = None
-
-    pre_x = None
-    pre_y = None
-    matrix = None
-    debug = True
