@@ -447,13 +447,6 @@ class Application(Gtk.Window):
                     )
                     dialog.run()
                     dialog.destroy()
-            else:
-                if self.current_player == Player.PLAYER:
-                    self.print_debug("\nAI has no moves, get the chance!\n")
-                else:
-                    self.print_debug("\nToo bad, you have no moves."
-                                     "One extra move for AI!")
-
         else:
             self.current_player = opponent
 
